@@ -36,9 +36,7 @@ return [
     ],
 
     'whatsapp' => [
-        'access_token' => env('WHATSAPP_ACCESS_TOKEN'),
-        'phone_number_id' => env('WHATSAPP_PHONE_NUMBER_ID'),
-        'verify_token' => env('WHATSAPP_VERIFY_TOKEN'),
+        'node_service_url' => env('WHATSAPP_NODE_SERVICE_URL', 'http://localhost:3000'),
         'admin_number' => env('ADMIN_WHATSAPP_NUMBER'),
     ],
 
