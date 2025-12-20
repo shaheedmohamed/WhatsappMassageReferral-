@@ -41,10 +41,13 @@ const initializeWhatsApp = () => {
         isReady = false;
     });
 
-    client.on('ready', () => {
+    client.on('ready', async () => {
         console.log('✅ تم الاتصال بواتساب بنجاح!');
+        console.log('⏳ انتظار 5 ثواني لتحميل البيانات...');
+        await new Promise(resolve => setTimeout(resolve, 5000));
         isReady = true;
         qrCodeData = null;
+        console.log('✅ جاهز لاستقبال الطلبات!');
     });
 
     client.on('authenticated', () => {
@@ -195,23 +198,42 @@ app.get('/chats', async (req, res) => {
             });
         }
 
-        const chats = await client.getChats();
+        let chats = [];
+        let retries = 3;
+        
+        while (retries > 0) {
+            try {
+                chats = await client.getChats();
+                break;
+            } catch (err) {
+                retries--;
+                if (retries === 0) throw err;
+                console.log(`⚠️ محاولة إعادة جلب المحادثات... (${3 - retries}/3)`);
+                await new Promise(resolve => setTimeout(resolve, 2000));
+            }
+        }
+
         const chatList = chats.map((chat) => {
-            const lastMessage = chat.lastMessage;
-            
-            return {
-                id: chat.id._serialized,
-                name: chat.name || chat.id.user || 'Unknown',
-                isGroup: chat.isGroup,
-                unreadCount: chat.unreadCount,
-                timestamp: chat.timestamp,
-                lastMessage: lastMessage ? {
-                    body: lastMessage.body || '',
-                    timestamp: lastMessage.timestamp,
-                    fromMe: lastMessage.fromMe
-                } : null
-            };
-        });
+            try {
+                const lastMessage = chat.lastMessage;
+                
+                return {
+                    id: chat.id._serialized,
+                    name: chat.name || chat.id.user || 'Unknown',
+                    isGroup: chat.isGroup,
+                    unreadCount: chat.unreadCount,
+                    timestamp: chat.timestamp,
+                    lastMessage: lastMessage ? {
+                        body: lastMessage.body || '',
+                        timestamp: lastMessage.timestamp,
+                        fromMe: lastMessage.fromMe
+                    } : null
+                };
+            } catch (err) {
+                console.error('⚠️ خطأ في معالجة محادثة:', err.message);
+                return null;
+            }
+        }).filter(chat => chat !== null);
 
         chatList.sort((a, b) => b.timestamp - a.timestamp);
 
@@ -221,10 +243,10 @@ app.get('/chats', async (req, res) => {
         });
 
     } catch (error) {
-        console.error('❌ خطأ في جلب المحادثات:', error);
+        console.error('❌ خطأ في جلب المحادثات:', error.message);
         res.status(500).json({
             success: false,
-            error: error.message
+            error: 'فشل جلب المحادثات. حاول مرة أخرى.'
         });
     }
 });
