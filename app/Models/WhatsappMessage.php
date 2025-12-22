@@ -7,18 +7,19 @@ use Illuminate\Database\Eloquent\Model;
 class WhatsappMessage extends Model
 {
     protected $fillable = [
+        'device_id',
         'message_id',
         'from_number',
         'from_name',
+        'to_number',
         'message_body',
         'message_type',
         'message_timestamp',
-        'forwarded_to_admin',
-        'forwarded_at',
         'replied',
         'reply_message',
-        'replied_at',
-        'raw_data',
+        'reply_timestamp',
+        'forwarded_to_admin',
+        'admin_notified',
     ];
 
     protected $casts = [

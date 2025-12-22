@@ -48,9 +48,7 @@
 </head>
 <body class="bg-gray-100">
     <div class="flex h-screen overflow-hidden">
-        <!-- Sidebar - قائمة المحادثات -->
         <div class="w-1/3 bg-white border-l border-gray-200 flex flex-col">
-            <!-- Header -->
             <div class="bg-green-600 text-white p-4">
                 <div class="flex items-center justify-between">
                     <h1 class="text-xl font-bold">Shaheed WhatsApp</h1>
@@ -69,13 +67,11 @@
                 </div>
             </div>
 
-            <!-- Search -->
             <div class="p-3 bg-gray-50 border-b border-gray-200">
                 <input type="text" id="searchChats" placeholder="ابحث في المحادثات..." 
                     class="w-full px-4 py-2 rounded-lg border border-gray-300 focus:outline-none focus:border-green-500">
             </div>
 
-            <!-- Chats List -->
             <div id="chatsList">
                 <div class="flex items-center justify-center h-full">
                     <div class="text-center">
@@ -86,7 +82,6 @@
             </div>
         </div>
 
-        <!-- Main Chat Area -->
         <div class="flex-1 flex flex-col bg-gray-50">
             <div id="noChatSelected" class="flex-1 flex items-center justify-center">
                 <div class="text-center">
@@ -99,7 +94,6 @@
             </div>
 
             <div id="chatArea" class="hidden flex-1 flex flex-col">
-                <!-- Chat Header -->
                 <div class="bg-white border-b border-gray-200 p-4">
                     <div class="flex items-center">
                         <div class="w-10 h-10 bg-green-500 rounded-full flex items-center justify-center text-white font-bold ml-3">
@@ -112,7 +106,6 @@
                     </div>
                 </div>
 
-                <!-- Messages Container -->
                 <div id="messagesContainer" class="p-4 bg-[#e5ddd5]">
                     <div class="flex items-center justify-center h-full">
                         <div class="text-center">
@@ -122,7 +115,6 @@
                     </div>
                 </div>
 
-                <!-- Message Input -->
                 <div class="bg-white border-t border-gray-200 p-4">
                     <form id="messageForm" class="flex items-center gap-2">
                         <input type="text" id="messageInput" placeholder="اكتب رسالة..." 
@@ -139,7 +131,6 @@
         </div>
     </div>
 
-    <!-- Modal - رسالة جديدة -->
     <div id="newMessageModal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
         <div class="bg-white rounded-2xl shadow-xl p-6 w-full max-w-md mx-4">
             <div class="flex justify-between items-center mb-4">
@@ -176,13 +167,6 @@
                     </button>
                 </div>
             </form>
-        </div>
-    </div>
-
-    <                   </button>
-                    </form>
-                </div>
-            </div>
         </div>
     </div>
 

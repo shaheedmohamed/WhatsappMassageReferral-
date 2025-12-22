@@ -4,51 +4,31 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="csrf-token" content="{{ csrf_token() }}">
-    <title>@yield('title', 'لوحة تحكم WhatsApp')</title>
+    <title>@yield('title', 'Shaheed WhatsApp')</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <style>
-        body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-        }
-    </style>
 </head>
 <body class="bg-gray-100">
-    <nav class="bg-green-600 text-white shadow-lg">
-        <div class="container mx-auto px-4 py-4">
-            <div class="flex items-center justify-between">
-                <div class="flex items-center space-x-4 space-x-reverse">
-                    <i class="fab fa-whatsapp text-3xl"></i>
-                    <h1 class="text-xl font-bold">لوحة تحكم WhatsApp</h1>
-                </div>
-                <div class="flex items-center space-x-4 space-x-reverse">
-                    <a href="{{ route('dashboard.index') }}" class="hover:text-green-200">
-                        <i class="fas fa-home ml-2"></i>الرئيسية
-                    </a>
-                </div>
-            </div>
-        </div>
-    </nav>
+    <div class="min-h-screen">
+        @include('layouts.navigation')
 
-    <main class="container mx-auto px-4 py-8">
-        @if(session('success'))
-            <div class="bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded mb-4">
-                {{ session('success') }}
-            </div>
+        <!-- Page Heading -->
+        @hasSection('header')
+            <header class="bg-white shadow">
+                <div class="max-w-7xl mx-auto py-6 px-4 sm:px-6 lg:px-8">
+                    @yield('header')
+                </div>
+            </header>
         @endif
 
-        @if(session('error'))
-            <div class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4">
-                {{ session('error') }}
+        <!-- Page Content -->
+        <main class="py-6">
+            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                @yield('content')
             </div>
-        @endif
+        </main>
+    </div>
 
-        @yield('content')
-    </main>
-
-    <script>
-        window.csrfToken = '{{ csrf_token() }}';
-    </script>
     @stack('scripts')
 </body>
 </html>

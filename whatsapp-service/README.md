@@ -1,40 +1,26 @@
-# WhatsApp Service - QR Code Connection
+# WhatsApp Service
 
-خادم Node.js للاتصال بواتساب عبر QR Code باستخدام whatsapp-web.js
+Node.js service using whatsapp-web.js for WhatsApp integration.
 
-## البدء السريع
+## Installation
 
-### 1. تثبيت المكتبات
 ```bash
 npm install
 ```
 
-### 2. إعداد البيئة
-افتح ملف `.env` وأضف رقم الأدمن:
-```env
-PORT=3000
-ADMIN_PHONE=966500000000
-```
+## Running
 
-### 3. تشغيل الخادم
 ```bash
 npm start
 ```
 
-### 4. مسح QR Code
-- سيظهر QR Code في Terminal
-- افتح واتساب على هاتفك
-- اذهب إلى: الإعدادات > الأجهزة المرتبطة > ربط جهاز
-- امسح الكود
+The service will run on port 3000 by default.
 
-## API Endpoints
+## Endpoints
 
-- `GET /status` - حالة الاتصال
-- `GET /qr` - الحصول على QR Code
-- `POST /send-message` - إرسال رسالة
-- `POST /logout` - تسجيل الخروج
-
-## ملاحظات
-- يجب أن يبقى الخادم يعمل طوال الوقت
-- ملفات الجلسة تُحفظ في `.wwebjs_auth/`
-- جميع الرسائل الواردة تُرسل تلقائياً للأدمن
+- GET /status - Check WhatsApp connection status
+- GET /qr - Get QR code for authentication
+- POST /send-message - Send a message
+- GET /chats - Get all chats
+- GET /messages/:chatId - Get messages from a chat
+- POST /logout - Logout from WhatsApp
