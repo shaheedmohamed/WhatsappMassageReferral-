@@ -45,4 +45,14 @@ class WhatsappMessage extends Model
     {
         return $query->where('from_number', $number);
     }
+
+    public function device()
+    {
+        return $this->belongsTo(WhatsappDevice::class);
+    }
+
+    public function assignedUser()
+    {
+        return $this->belongsTo(User::class, 'assigned_user_id');
+    }
 }

@@ -67,9 +67,13 @@
                 </div>
             </div>
 
-            <div class="p-3 bg-gray-50 border-b border-gray-200">
+            <div class="p-3 bg-gray-50 border-b border-gray-200 space-y-2">
                 <input type="text" id="searchChats" placeholder="ابحث في المحادثات..." 
                     class="w-full px-4 py-2 rounded-lg border border-gray-300 focus:outline-none focus:border-green-500">
+                
+                <select id="deviceFilter" class="w-full px-4 py-2 rounded-lg border border-gray-300 focus:outline-none focus:border-green-500">
+                    <option value="">جميع الأجهزة</option>
+                </select>
             </div>
 
             <div id="chatsList">
@@ -172,7 +176,9 @@
 
     <script>
         let chats = [];
+        let devices = [];
         let currentChatId = null;
+        let currentDeviceId = null;
         let messagesInterval = null;
 
         async function loadChats() {
@@ -182,6 +188,10 @@
                 
                 if (data.success && data.chats) {
                     chats = data.chats;
+                    if (data.devices) {
+                        devices = data.devices;
+                        updateDeviceFilter();
+                    }
                     displayChats(chats);
                 } else {
                     document.getElementById('chatsList').innerHTML = `
@@ -198,6 +208,19 @@
                     </div>
                 `;
             }
+        }
+
+        function updateDeviceFilter() {
+            const select = document.getElementById('deviceFilter');
+            const currentValue = select.value;
+            
+            select.innerHTML = '<option value="">جميع الأجهزة</option>' + 
+                devices.map(device => {
+                    const displayName = device.phone_number || device.name || 'جهاز غير معروف';
+                    return `<option value="${device.id}">${displayName}</option>`;
+                }).join('');
+            
+            select.value = currentValue;
         }
 
         function displayChats(chatList) {
@@ -217,8 +240,11 @@
                 const time = chat.timestamp ? new Date(chat.timestamp * 1000).toLocaleTimeString('ar-EG', { hour: '2-digit', minute: '2-digit' }) : '';
                 const initial = chat.name.charAt(0).toUpperCase();
                 
+                const deviceInfo = chat.deviceNumber || chat.deviceName || 'غير معروف';
+                const deviceBadge = `<span class="text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded-full ml-2">📱 ${deviceInfo}</span>`;
+                
                 return `
-                    <div class="chat-item border-b border-gray-200 p-4 cursor-pointer transition" onclick="openChat('${chat.id}', '${chat.name.replace(/'/g, "\\'")}')">
+                    <div class="chat-item border-b border-gray-200 p-4 cursor-pointer transition" onclick="openChat('${chat.id}', '${chat.name.replace(/'/g, "\\'")}', '${chat.deviceId || ''}')">
                         <div class="flex items-center">
                             <div class="w-12 h-12 bg-green-500 rounded-full flex items-center justify-center text-white font-bold ml-3">
                                 ${initial}
@@ -229,6 +255,7 @@
                                     <span class="text-xs text-gray-500 mr-2">${time}</span>
                                 </div>
                                 <p class="text-sm text-gray-600 truncate">${lastMsg}</p>
+                                <div class="mt-1">${deviceBadge}</div>
                             </div>
                             ${chat.unreadCount > 0 ? `<span class="bg-green-500 text-white text-xs rounded-full px-2 py-1 mr-2">${chat.unreadCount}</span>` : ''}
                         </div>
@@ -237,8 +264,9 @@
             }).join('');
         }
 
-        async function openChat(chatId, chatName) {
+        async function openChat(chatId, chatName, deviceId = '') {
             currentChatId = chatId;
+            currentDeviceId = deviceId;
             
             document.getElementById('noChatSelected').classList.add('hidden');
             document.getElementById('chatArea').classList.remove('hidden');
@@ -249,13 +277,17 @@
                 clearInterval(messagesInterval);
             }
             
-            await loadMessages(chatId);
-            messagesInterval = setInterval(() => loadMessages(chatId), 5000);
+            await loadMessages(chatId, deviceId);
+            messagesInterval = setInterval(() => loadMessages(chatId, deviceId), 5000);
         }
 
-        async function loadMessages(chatId) {
+        async function loadMessages(chatId, deviceId = '') {
             try {
-                const response = await fetch(`{{ url('/whatsapp/api/messages') }}/${encodeURIComponent(chatId)}`);
+                let url = `{{ url('/whatsapp/api/messages') }}/${encodeURIComponent(chatId)}`;
+                if (deviceId) {
+                    url += `?device_id=${deviceId}`;
+                }
+                const response = await fetch(url);
                 const data = await response.json();
                 
                 if (data.success && data.messages) {
@@ -315,7 +347,8 @@
                     },
                     body: JSON.stringify({
                         to: currentChatId,
-                        message: message
+                        message: message,
+                        device_id: currentDeviceId
                     })
                 });
                 
@@ -323,7 +356,7 @@
                 
                 if (data.success) {
                     input.value = '';
-                    await loadMessages(currentChatId);
+                    await loadMessages(currentChatId, currentDeviceId);
                 } else {
                     alert('فشل إرسال الرسالة: ' + (data.error || 'خطأ غير معروف'));
                 }
@@ -334,12 +367,27 @@
         });
 
         document.getElementById('searchChats').addEventListener('input', (e) => {
-            const search = e.target.value.toLowerCase();
-            const filtered = chats.filter(chat => 
+            filterChats();
+        });
+
+        document.getElementById('deviceFilter').addEventListener('change', (e) => {
+            filterChats();
+        });
+
+        function filterChats() {
+            const search = document.getElementById('searchChats').value.toLowerCase();
+            const deviceId = document.getElementById('deviceFilter').value;
+            
+            let filtered = chats.filter(chat => 
                 chat.name.toLowerCase().includes(search)
             );
+            
+            if (deviceId) {
+                filtered = filtered.filter(chat => String(chat.deviceId) === String(deviceId));
+            }
+            
             displayChats(filtered);
-        });
+        }
 
         async function logout() {
             if (!confirm('هل تريد تسجيل الخروج من واتساب؟')) return;

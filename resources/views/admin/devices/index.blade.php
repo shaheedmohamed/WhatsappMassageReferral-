@@ -65,7 +65,7 @@
                             </div>
                             <div>
                                 <h3 class="font-bold text-gray-800">{{ $device->device_name }}</h3>
-                                <p class="text-sm text-gray-500">{{ $device->phone_number ?? 'غير متصل' }}</p>
+                                <!-- <p class="text-sm text-gray-500">{{ $device->phone_number ?? 'غير متصل' }}</p> -->
                             </div>
                         </div>
                     </div>

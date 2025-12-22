@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Services\WhatsAppService;
+use App\Models\WhatsappDevice;
 use Illuminate\Http\Request;
 
 class WhatsAppWebController extends Controller
@@ -39,16 +40,27 @@ class WhatsAppWebController extends Controller
 
     public function getStatus()
     {
-        $status = $this->whatsapp->getStatus();
-        return response()->json($status);
+        // Return status of all connected devices
+        $devices = WhatsappDevice::where('status', 'connected')
+            ->select('id', 'name', 'phone_number', 'session_id', 'status')
+            ->get();
+        
+        return response()->json([
+            'success' => true,
+            'ready' => $devices->isNotEmpty(),
+            'devices' => $devices,
+            'totalDevices' => $devices->count()
+        ]);
     }
 
     public function chats()
     {
-        $status = $this->whatsapp->getStatus();
+        // Check if any device is connected
+        $hasConnectedDevice = WhatsappDevice::where('status', 'connected')->exists();
         
-        if (!$status['ready']) {
-            return redirect()->route('whatsapp.index');
+        if (!$hasConnectedDevice) {
+            return redirect()->route('admin.devices.index')
+                ->with('error', 'يجب توصيل جهاز واتساب أولاً');
         }
 
         return view('whatsapp.chats');
@@ -56,13 +68,81 @@ class WhatsAppWebController extends Controller
 
     public function getChats()
     {
-        $chats = $this->whatsapp->getChats();
-        return response()->json($chats);
+        try {
+            $devices = WhatsappDevice::where('status', 'connected')
+                ->select('id', 'device_name', 'phone_number', 'session_id')
+                ->get();
+            
+            if ($devices->isEmpty()) {
+                return response()->json([
+                    'success' => false,
+                    'error' => 'لا توجد أجهزة متصلة',
+                    'chats' => [],
+                    'devices' => []
+                ]);
+            }
+            
+            $allChats = [];
+            
+            // Format devices for frontend
+            $formattedDevices = $devices->map(function($device) {
+                return [
+                    'id' => $device->id,
+                    'name' => $device->device_name,
+                    'phone_number' => $device->phone_number,
+                    'session_id' => $device->session_id
+                ];
+            });
+            
+            foreach ($devices as $device) {
+                $chats = $this->whatsapp->getChats($device->session_id);
+                
+                if (isset($chats['success']) && $chats['success'] && isset($chats['chats'])) {
+                    foreach ($chats['chats'] as $chat) {
+                        $chat['deviceId'] = $device->id;
+                        $chat['deviceNumber'] = $device->phone_number ?? $device->device_name;
+                        $chat['deviceName'] = $device->device_name;
+                        $allChats[] = $chat;
+                    }
+                }
+            }
+            
+            return response()->json([
+                'success' => true,
+                'chats' => $allChats,
+                'devices' => $formattedDevices
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'error' => 'خطأ في الاتصال بخدمة واتساب: ' . $e->getMessage(),
+                'chats' => [],
+                'devices' => []
+            ]);
+        }
     }
 
-    public function getMessages($chatId)
+    public function getMessages(Request $request, $chatId)
     {
-        $messages = $this->whatsapp->getMessages($chatId);
+        $deviceId = $request->get('device_id');
+        
+        if (!$deviceId) {
+            return response()->json([
+                'success' => false,
+                'error' => 'Device ID is required'
+            ]);
+        }
+        
+        $device = WhatsappDevice::find($deviceId);
+        
+        if (!$device) {
+            return response()->json([
+                'success' => false,
+                'error' => 'Device not found'
+            ]);
+        }
+        
+        $messages = $this->whatsapp->getMessages($chatId, $device->session_id);
         return response()->json($messages);
     }
 
@@ -70,10 +150,29 @@ class WhatsAppWebController extends Controller
     {
         $request->validate([
             'to' => 'required|string',
-            'message' => 'required|string'
+            'message' => 'required|string',
+            'device_id' => 'required|string'
         ]);
 
-        $result = $this->whatsapp->sendMessage($request->to, $request->message);
+        $device = WhatsappDevice::find($request->device_id);
+        
+        if (!$device) {
+            return response()->json([
+                'success' => false,
+                'error' => 'Device not found'
+            ]);
+        }
+        
+        $result = $this->whatsapp->sendMessage(
+            $request->to, 
+            $request->message, 
+            $device->session_id
+        );
+        
+        if ($result['success'] ?? false) {
+            auth()->user()->updateActivity();
+        }
+        
         return response()->json($result);
     }
 

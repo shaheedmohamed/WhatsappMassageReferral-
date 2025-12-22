@@ -15,10 +15,14 @@ class WhatsAppService
         $this->nodeServiceUrl = config('services.whatsapp.node_service_url', 'http://localhost:3000');
     }
 
-    public function getStatus(): array
+    public function getStatus($sessionId = null): array
     {
         try {
-            $response = Http::timeout(5)->get("{$this->nodeServiceUrl}/status");
+            $url = $sessionId 
+                ? "{$this->nodeServiceUrl}/status/{$sessionId}"
+                : "{$this->nodeServiceUrl}/status";
+                
+            $response = Http::timeout(5)->get($url);
 
             if ($response->successful()) {
                 return $response->json();
@@ -38,6 +42,34 @@ class WhatsAppService
             return [
                 'success' => false,
                 'ready' => false,
+                'error' => $e->getMessage()
+            ];
+        }
+    }
+    
+    public function initializeSession($sessionId): array
+    {
+        try {
+            $response = Http::timeout(10)->post("{$this->nodeServiceUrl}/initialize", [
+                'sessionId' => $sessionId
+            ]);
+
+            if ($response->successful()) {
+                return $response->json();
+            }
+
+            return [
+                'success' => false,
+                'error' => 'Failed to initialize session'
+            ];
+
+        } catch (Exception $e) {
+            Log::error('WhatsApp initialize session error', [
+                'error' => $e->getMessage()
+            ]);
+
+            return [
+                'success' => false,
                 'error' => $e->getMessage()
             ];
         }
@@ -138,10 +170,17 @@ class WhatsAppService
         }
     }
 
-    public function getChats(): array
+    public function getChats($sessionId = null): array
     {
         try {
-            $response = Http::timeout(30)->get("{$this->nodeServiceUrl}/chats");
+            if (!$sessionId) {
+                return [
+                    'success' => false,
+                    'error' => 'Session ID is required'
+                ];
+            }
+            
+            $response = Http::timeout(30)->get("{$this->nodeServiceUrl}/chats/{$sessionId}");
 
             if ($response->successful()) {
                 return $response->json();
@@ -164,10 +203,17 @@ class WhatsAppService
         }
     }
 
-    public function getMessages(string $chatId, int $limit = 50): array
+    public function getMessages(string $chatId, $sessionId = null, int $limit = 50): array
     {
         try {
-            $response = Http::timeout(30)->get("{$this->nodeServiceUrl}/messages/{$chatId}", [
+            if (!$sessionId) {
+                return [
+                    'success' => false,
+                    'error' => 'Session ID is required'
+                ];
+            }
+            
+            $response = Http::timeout(30)->get("{$this->nodeServiceUrl}/messages/{$sessionId}/{$chatId}", [
                 'limit' => $limit
             ]);
 

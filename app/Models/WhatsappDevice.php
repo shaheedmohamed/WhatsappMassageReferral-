@@ -11,6 +11,7 @@ class WhatsappDevice extends Model
 
     protected $fillable = [
         'user_id',
+        'name',
         'device_name',
         'phone_number',
         'session_id',
@@ -33,5 +34,10 @@ class WhatsappDevice extends Model
     public function messages()
     {
         return $this->hasMany(WhatsappMessage::class, 'device_id');
+    }
+
+    public function chatAssignments()
+    {
+        return $this->hasMany(ChatAssignment::class);
     }
 }

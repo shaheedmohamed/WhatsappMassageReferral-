@@ -135,14 +135,21 @@
             const response = await fetch(`/admin/devices/${deviceId}/qr`);
             const data = await response.json();
 
-            if (data.success && data.qr) {
-                document.getElementById('qrImage').src = data.qr;
+            if (data.success && (data.qr || data.qrCode)) {
+                const qrData = data.qr || data.qrCode;
+                
+                const qrCodeUrl = `https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=${encodeURIComponent(qrData)}`;
+                document.getElementById('qrImage').src = qrCodeUrl;
                 document.getElementById('qrLoading').classList.add('hidden');
                 document.getElementById('qrDisplay').classList.remove('hidden');
                 
                 startStatusCheck();
+            } else if (data.message && data.message.includes('متصل')) {
+                document.getElementById('qrLoading').classList.add('hidden');
+                document.getElementById('connected').classList.remove('hidden');
+                setTimeout(() => window.location.reload(), 1000);
             } else {
-                throw new Error('Failed to load QR');
+                throw new Error(data.message || 'Failed to load QR');
             }
         } catch (error) {
             console.error('Error loading QR:', error);
@@ -156,9 +163,10 @@
             const response = await fetch(`/admin/devices/${deviceId}/status`);
             const data = await response.json();
 
-            if (data.success && data.status === 'ready') {
+            if (data.success && data.ready) {
                 clearInterval(statusCheckInterval);
                 document.getElementById('qrDisplay').classList.add('hidden');
+                document.getElementById('qrLoading').classList.add('hidden');
                 document.getElementById('connected').classList.remove('hidden');
                 
                 setTimeout(() => {

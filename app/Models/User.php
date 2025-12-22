@@ -40,10 +40,50 @@ class User extends Authenticatable
      */
     protected $casts = [
         'email_verified_at' => 'datetime',
+        'permissions' => 'array',
+        'is_active' => 'boolean',
+        'last_activity_at' => 'datetime',
     ];
 
     public function whatsappDevices()
     {
         return $this->hasMany(WhatsappDevice::class);
+    }
+
+    public function chatAssignments()
+    {
+        return $this->hasMany(ChatAssignment::class);
+    }
+
+    public function assignedMessages()
+    {
+        return $this->hasMany(WhatsappMessage::class, 'assigned_user_id');
+    }
+
+    public function isAdmin()
+    {
+        return $this->role === 'admin';
+    }
+
+    public function isAgent()
+    {
+        return $this->role === 'agent';
+    }
+
+    public function hasPermission($permission)
+    {
+        if ($this->isAdmin()) {
+            return true;
+        }
+        
+        return in_array($permission, $this->permissions ?? []);
+    }
+
+    public function updateActivity()
+    {
+        $this->update([
+            'last_activity_at' => now(),
+            'status' => 'online'
+        ]);
     }
 }

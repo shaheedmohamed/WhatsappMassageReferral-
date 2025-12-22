@@ -54,34 +54,82 @@ class DeviceController extends Controller
     public function getQr($id)
     {
         $device = auth()->user()->whatsappDevices()->findOrFail($id);
+        $sessionId = $device->session_id;
         
-        $response = $this->whatsappService->getQrCode($device->session_id);
+        // Initialize session if not exists
+        $initResponse = $this->whatsappService->initializeSession($sessionId);
         
-        if ($response['success'] && isset($response['qr'])) {
+        // Wait a moment for initialization
+        sleep(2);
+        
+        // Get status
+        $statusResponse = $this->whatsappService->getStatus($sessionId);
+        
+        if ($statusResponse['success'] && $statusResponse['ready']) {
             $device->update([
-                'qr_code' => $response['qr'],
-                'status' => 'connecting',
+                'status' => 'connected',
+                'last_connected_at' => now(),
+            ]);
+            
+            return response()->json([
+                'success' => true,
+                'qr' => null,
+                'message' => 'متصل بالفعل'
             ]);
         }
         
-        return response()->json($response);
+        if (isset($statusResponse['qrCode']) && $statusResponse['qrCode']) {
+            $device->update([
+                'qr_code' => $statusResponse['qrCode'],
+                'status' => 'connecting',
+            ]);
+            
+            return response()->json([
+                'success' => true,
+                'qr' => $statusResponse['qrCode'],
+                'message' => 'امسح هذا الكود'
+            ]);
+        }
+        
+        $device->update(['status' => 'disconnected']);
+        
+        return response()->json([
+            'success' => false,
+            'error' => 'جاري التهيئة... حاول مرة أخرى بعد ثواني'
+        ]);
     }
 
     public function getStatus($id)
     {
         $device = auth()->user()->whatsappDevices()->findOrFail($id);
         
-        $response = $this->whatsappService->getStatus($device->session_id);
+        $response = $this->whatsappService->getStatus();
         
-        if ($response['success'] && $response['status'] === 'ready') {
+        if ($response['success'] && $response['ready']) {
             $device->update([
                 'status' => 'connected',
                 'phone_number' => $response['phone'] ?? null,
                 'last_connected_at' => now(),
             ]);
+            
+            return response()->json([
+                'success' => true,
+                'status' => 'ready',
+                'ready' => true,
+                'phone' => $response['phone'] ?? null
+            ]);
+        } else {
+            $device->update([
+                'status' => 'disconnected',
+            ]);
+            
+            return response()->json([
+                'success' => false,
+                'status' => 'disconnected',
+                'ready' => false,
+                'qrCode' => $response['qrCode'] ?? null
+            ]);
         }
-        
-        return response()->json($response);
     }
 
     public function disconnect($id)

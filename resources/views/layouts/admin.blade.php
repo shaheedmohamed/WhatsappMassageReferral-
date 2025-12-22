@@ -28,15 +28,22 @@
                     <span>الرئيسية</span>
                 </a>
                 
+                @if(auth()->user()->isAdmin())
+                <a href="{{ route('admin.users.index') }}" class="flex items-center px-6 py-3 hover:bg-green-500 transition {{ request()->routeIs('admin.users.*') ? 'bg-green-500' : '' }}">
+                    <i class="fas fa-users ml-3"></i>
+                    <span>إدارة المستخدمين</span>
+                </a>
+                
+                <a href="{{ route('admin.activity.index') }}" class="flex items-center px-6 py-3 hover:bg-green-500 transition {{ request()->routeIs('admin.activity.*') ? 'bg-green-500' : '' }}">
+                    <i class="fas fa-chart-line ml-3"></i>
+                    <span>نشاط المستخدمين</span>
+                </a>
+                
                 <a href="{{ route('admin.devices.index') }}" class="flex items-center px-6 py-3 hover:bg-green-500 transition {{ request()->routeIs('admin.devices.*') ? 'bg-green-500' : '' }}">
                     <i class="fas fa-mobile-alt ml-3"></i>
                     <span>الأجهزة المتصلة</span>
                 </a>
-                
-                <a href="{{ route('dashboard.index') }}" class="flex items-center px-6 py-3 hover:bg-green-500 transition {{ request()->routeIs('dashboard.*') ? 'bg-green-500' : '' }}">
-                    <i class="fas fa-envelope ml-3"></i>
-                    <span>الرسائل</span>
-                </a>
+                @endif
                 
                 <a href="{{ route('whatsapp.chats') }}" class="flex items-center px-6 py-3 hover:bg-green-500 transition {{ request()->routeIs('whatsapp.chats') ? 'bg-green-500' : '' }}">
                     <i class="fas fa-comments ml-3"></i>
