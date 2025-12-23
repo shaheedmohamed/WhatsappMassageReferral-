@@ -207,4 +207,83 @@ class SuperAdminController extends Controller
         
         return view('super-admin.employees.login-logs', compact('employee', 'loginLogs'));
     }
+    
+    public function manageCommunityEmployees(Community $community)
+    {
+        $this->authorize('update', $community);
+        
+        $communityEmployees = $community->employees()
+            ->with(['loginLogs' => function($query) {
+                $query->latest('logged_in_at')->limit(1);
+            }])
+            ->get();
+        
+        $availableEmployees = User::where('role', 'employee')
+            ->where(function($query) use ($community) {
+                $query->where('community_id', '!=', $community->id)
+                      ->orWhereNull('community_id');
+            })
+            ->orderBy('name')
+            ->get();
+        
+        return view('super-admin.communities.employees', compact('community', 'communityEmployees', 'availableEmployees'));
+    }
+    
+    public function assignEmployeeToCommunity(Request $request, Community $community)
+    {
+        $this->authorize('update', $community);
+        
+        $request->validate([
+            'employee_id' => 'required|exists:users,id',
+        ]);
+        
+        $employee = User::findOrFail($request->employee_id);
+        
+        if ($employee->role !== 'employee') {
+            return back()->with('error', 'يمكن إضافة الموظفين فقط');
+        }
+        
+        $employee->update([
+            'community_id' => $community->id,
+            'super_admin_id' => auth()->id(),
+        ]);
+        
+        return back()->with('success', 'تم إضافة الموظف للمجتمع بنجاح');
+    }
+    
+    public function removeEmployeeFromCommunity(Community $community, User $employee)
+    {
+        $this->authorize('update', $community);
+        
+        if ($employee->community_id != $community->id) {
+            return back()->with('error', 'هذا الموظف غير تابع لهذا المجتمع');
+        }
+        
+        $employee->update(['community_id' => null]);
+        
+        return back()->with('success', 'تم إزالة الموظف من المجتمع بنجاح');
+    }
+    
+    public function createAndAssignEmployee(Request $request, Community $community)
+    {
+        $this->authorize('update', $community);
+        
+        $request->validate([
+            'name' => 'required|string|max:255',
+            'email' => 'required|email|unique:users,email',
+            'password' => 'required|string|min:8|confirmed',
+        ]);
+        
+        $employee = User::create([
+            'name' => $request->name,
+            'email' => $request->email,
+            'password' => Hash::make($request->password),
+            'role' => 'employee',
+            'super_admin_id' => auth()->id(),
+            'community_id' => $community->id,
+            'is_active' => true,
+        ]);
+        
+        return back()->with('success', 'تم إنشاء الموظف وإضافته للمجتمع بنجاح');
+    }
 }

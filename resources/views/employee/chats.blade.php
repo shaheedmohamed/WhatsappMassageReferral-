@@ -193,6 +193,12 @@
                             <h2 id="chatName" class="font-semibold text-gray-800">اسم المحادثة</h2>
                             <p id="chatStatus" class="text-sm text-gray-500">متصل</p>
                         </div>
+                        <button onclick="showExitModal()" class="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-lg transition flex items-center gap-2" title="إنهاء المحادثة">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"></path>
+                            </svg>
+                            <span>إنهاء</span>
+                        </button>
                     </div>
                 </div>
 
@@ -283,15 +289,89 @@
         </div>
     </div>
 
+    <div id="claimChatModal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+        <div class="bg-white rounded-2xl shadow-xl p-6 w-full max-w-md mx-4">
+            <div class="flex justify-between items-center mb-4">
+                <h2 class="text-xl font-bold text-gray-800">تولي المحادثة</h2>
+            </div>
+            
+            <div class="mb-6">
+                <p class="text-gray-700 text-lg text-center">هل ستتولى أمر الرد على هذه المحادثة؟</p>
+            </div>
+            
+            <div class="flex gap-3">
+                <button onclick="confirmClaimChat()" class="flex-1 bg-green-500 hover:bg-green-600 text-white font-semibold py-3 px-4 rounded-lg transition">
+                    نعم، سأتولى الرد
+                </button>
+                <button onclick="cancelClaimChat()" class="flex-1 bg-gray-300 hover:bg-gray-400 text-gray-700 font-semibold py-3 px-4 rounded-lg transition">
+                    إلغاء
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <div id="exitChatModal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+        <div class="bg-white rounded-2xl shadow-xl p-6 w-full max-w-md mx-4">
+            <div class="flex justify-between items-center mb-4">
+                <h2 class="text-xl font-bold text-gray-800">إنهاء المحادثة</h2>
+            </div>
+            
+            <div class="mb-6">
+                <p class="text-gray-700 text-lg text-center mb-4">اختر حالة المحادثة:</p>
+            </div>
+            
+            <div class="space-y-3">
+                <button onclick="updateChatStatus('completed')" class="w-full bg-green-500 hover:bg-green-600 text-white font-semibold py-3 px-4 rounded-lg transition flex items-center justify-center gap-2">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+                    </svg>
+                    إنهاء المحادثة - تم الانتهاء
+                </button>
+                <button onclick="updateChatStatus('on_hold')" class="w-full bg-yellow-500 hover:bg-yellow-600 text-white font-semibold py-3 px-4 rounded-lg transition flex items-center justify-center gap-2">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                    </svg>
+                    الإبقاء في الانتظار مؤقتاً
+                </button>
+                <button onclick="cancelExitChat()" class="w-full bg-gray-300 hover:bg-gray-400 text-gray-700 font-semibold py-3 px-4 rounded-lg transition">
+                    إلغاء
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <div id="chatLockedModal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+        <div class="bg-white rounded-2xl shadow-xl p-6 w-full max-w-md mx-4">
+            <div class="flex justify-between items-center mb-4">
+                <h2 class="text-xl font-bold text-gray-800">محادثة مشغولة</h2>
+            </div>
+            
+            <div class="mb-6 text-center">
+                <svg class="w-16 h-16 text-yellow-500 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"></path>
+                </svg>
+                <p class="text-gray-700 text-lg" id="chatLockedMessage"></p>
+            </div>
+            
+            <button onclick="hideLockedModal()" class="w-full bg-gray-300 hover:bg-gray-400 text-gray-700 font-semibold py-3 px-4 rounded-lg transition">
+                حسناً
+            </button>
+        </div>
+    </div>
+
     <script>
         let chats = [];
         let devices = [];
         let currentChatId = null;
         let currentDeviceId = null;
         let currentChatDeviceId = null;
+        let currentChatNumber = null;
+        let currentChatName = null;
         let allChats = [];
         let allDevices = [];
         let messagesInterval = null;
+        let chatAssignments = {};
+        let pendingChatOpen = null;
         
         // Community device IDs from server
         const communityDeviceIds = @json($devices->pluck('id')->toArray());
@@ -368,6 +448,15 @@
                 const deviceInfo = chat.deviceNumber || chat.deviceName || 'غير معروف';
                 const deviceBadge = `<span class="text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded-full ml-2">📱 ${deviceInfo}</span>`;
                 
+                const assignmentKey = `${chat.id}_${chat.deviceId}`;
+                const assignment = chatAssignments[assignmentKey];
+                
+                let assignmentBadge = '';
+                if (assignment) {
+                    const badgeColor = assignment.status === 'in_progress' ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800';
+                    assignmentBadge = `<span class="text-xs ${badgeColor} px-2 py-1 rounded-full ml-2">👤 ${assignment.employee_name} - ${assignment.status_text}</span>`;
+                }
+                
                 return `
                     <div class="chat-item border-b border-gray-200 p-4 cursor-pointer transition" onclick="openChat('${chat.id}', '${chat.name.replace(/'/g, "\\'")}', '${chat.deviceId || ''}')">
                         <div class="flex items-center">
@@ -380,7 +469,10 @@
                                     <span class="text-xs text-[#667781] mr-2">${time}</span>
                                 </div>
                                 <p class="text-sm text-gray-600 truncate">${lastMsg}</p>
-                                <div class="mt-1">${deviceBadge}</div>
+                                <div class="mt-1 flex flex-wrap gap-1">
+                                    ${deviceBadge}
+                                    ${assignmentBadge}
+                                </div>
                             </div>
                             ${chat.unreadCount > 0 ? `<span class="bg-[#25d366] text-white text-xs rounded-full w-5 h-5 flex items-center justify-center mr-2 font-semibold">${chat.unreadCount}</span>` : ''}
                         </div>
@@ -390,13 +482,53 @@
         }
 
         async function openChat(chatId, chatName, deviceId = '') {
-            currentChatId = chatId;
-            currentChatDeviceId = deviceId;
-            
             if (!deviceId) {
                 alert('خطأ: لم يتم تحديد الجهاز');
                 return;
             }
+            
+            pendingChatOpen = { chatId, chatName, deviceId };
+            
+            try {
+                const response = await fetch('{{ route("employee.chat-assignments.check") }}', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
+                    },
+                    body: JSON.stringify({
+                        chat_id: chatId,
+                        device_id: deviceId
+                    })
+                });
+                
+                const data = await response.json();
+                
+                if (data.success && data.assigned) {
+                    if (!data.assignment.is_current_user) {
+                        showLockedModal(data.assignment.employee_name, data.assignment.status_text);
+                        pendingChatOpen = null;
+                        return;
+                    } else {
+                        proceedToOpenChat(chatId, chatName, deviceId);
+                    }
+                } else {
+                    showClaimModal();
+                }
+            } catch (error) {
+                console.error('Error checking assignment:', error);
+                alert('حدث خطأ أثناء التحقق من المحادثة');
+                pendingChatOpen = null;
+            }
+        }
+
+        function proceedToOpenChat(chatId, chatName, deviceId) {
+            currentChatId = chatId;
+            currentChatDeviceId = deviceId;
+            currentChatName = chatName;
+            
+            const chat = chats.find(c => c.id === chatId);
+            currentChatNumber = chat ? chat.id.replace('@c.us', '').replace('@g.us', '') : '';
             
             document.getElementById('noChatSelected').classList.add('hidden');
             document.getElementById('chatArea').classList.remove('hidden');
@@ -407,8 +539,149 @@
                 clearInterval(messagesInterval);
             }
             
-            await loadMessages(chatId, deviceId);
+            loadMessages(chatId, deviceId);
             messagesInterval = setInterval(() => loadMessages(chatId, deviceId), 5000);
+            loadChatAssignments();
+        }
+
+        function showClaimModal() {
+            document.getElementById('claimChatModal').classList.remove('hidden');
+        }
+
+        function hideClaimModal() {
+            document.getElementById('claimChatModal').classList.add('hidden');
+        }
+
+        async function confirmClaimChat() {
+            if (!pendingChatOpen) return;
+            
+            const { chatId, chatName, deviceId } = pendingChatOpen;
+            
+            try {
+                const response = await fetch('{{ route("employee.chat-assignments.claim") }}', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
+                    },
+                    body: JSON.stringify({
+                        chat_id: chatId,
+                        device_id: deviceId,
+                        chat_number: chatId.replace('@c.us', '').replace('@g.us', '')
+                    })
+                });
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    hideClaimModal();
+                    proceedToOpenChat(chatId, chatName, deviceId);
+                    pendingChatOpen = null;
+                } else {
+                    alert(data.message || 'فشل تولي المحادثة');
+                    hideClaimModal();
+                    pendingChatOpen = null;
+                }
+            } catch (error) {
+                console.error('Error claiming chat:', error);
+                alert('حدث خطأ أثناء تولي المحادثة');
+                hideClaimModal();
+                pendingChatOpen = null;
+            }
+        }
+
+        function cancelClaimChat() {
+            hideClaimModal();
+            pendingChatOpen = null;
+        }
+
+        function showExitModal() {
+            document.getElementById('exitChatModal').classList.remove('hidden');
+        }
+
+        function hideExitModal() {
+            document.getElementById('exitChatModal').classList.add('hidden');
+        }
+
+        async function updateChatStatus(status) {
+            if (!currentChatId || !currentChatDeviceId) return;
+            
+            try {
+                const response = await fetch('{{ route("employee.chat-assignments.update-status") }}', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
+                    },
+                    body: JSON.stringify({
+                        chat_id: currentChatId,
+                        device_id: currentChatDeviceId,
+                        status: status
+                    })
+                });
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    hideExitModal();
+                    
+                    if (messagesInterval) {
+                        clearInterval(messagesInterval);
+                    }
+                    
+                    document.getElementById('noChatSelected').classList.remove('hidden');
+                    document.getElementById('chatArea').classList.add('hidden');
+                    
+                    currentChatId = null;
+                    currentChatDeviceId = null;
+                    currentChatNumber = null;
+                    currentChatName = null;
+                    
+                    loadChats();
+                    loadChatAssignments();
+                } else {
+                    alert(data.message || 'فشل تحديث حالة المحادثة');
+                }
+            } catch (error) {
+                console.error('Error updating chat status:', error);
+                alert('حدث خطأ أثناء تحديث حالة المحادثة');
+            }
+        }
+
+        function cancelExitChat() {
+            hideExitModal();
+        }
+
+        function showLockedModal(employeeName, statusText) {
+            document.getElementById('chatLockedMessage').textContent = 
+                `هذه المحادثة ${statusText} من قبل ${employeeName}`;
+            document.getElementById('chatLockedModal').classList.remove('hidden');
+        }
+
+        function hideLockedModal() {
+            document.getElementById('chatLockedModal').classList.add('hidden');
+        }
+
+        async function loadChatAssignments() {
+            try {
+                const response = await fetch('{{ route("employee.chat-assignments.list") }}');
+                const data = await response.json();
+                
+                if (data.success) {
+                    chatAssignments = {};
+                    data.assignments.forEach(assignment => {
+                        const key = `${assignment.chat_id}_${assignment.device_id}`;
+                        chatAssignments[key] = assignment;
+                    });
+                    updateChatListWithAssignments();
+                }
+            } catch (error) {
+                console.error('Error loading assignments:', error);
+            }
+        }
+
+        function updateChatListWithAssignments() {
+            displayChats(chats);
         }
 
         async function loadMessages(chatId, deviceId = '') {
@@ -975,7 +1248,11 @@
         }
 
         loadChats();
-        setInterval(loadChats, 30000);
+        loadChatAssignments();
+        setInterval(() => {
+            loadChats();
+            loadChatAssignments();
+        }, 30000);
     </script>
 </body>
 </html>

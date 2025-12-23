@@ -96,6 +96,10 @@ Route::middleware(['auth'])->group(function () {
             Route::post('/', [\App\Http\Controllers\SuperAdminController::class, 'storeCommunity'])->name('store');
             Route::get('/{community}/edit', [\App\Http\Controllers\SuperAdminController::class, 'editCommunity'])->name('edit');
             Route::put('/{community}', [\App\Http\Controllers\SuperAdminController::class, 'updateCommunity'])->name('update');
+            Route::get('/{community}/employees', [\App\Http\Controllers\SuperAdminController::class, 'manageCommunityEmployees'])->name('employees');
+            Route::post('/{community}/employees/assign', [\App\Http\Controllers\SuperAdminController::class, 'assignEmployeeToCommunity'])->name('employees.assign');
+            Route::post('/{community}/employees/create-and-assign', [\App\Http\Controllers\SuperAdminController::class, 'createAndAssignEmployee'])->name('employees.create-and-assign');
+            Route::delete('/{community}/employees/{employee}', [\App\Http\Controllers\SuperAdminController::class, 'removeEmployeeFromCommunity'])->name('employees.remove');
         });
         
         Route::prefix('employees')->name('employees.')->group(function () {
@@ -113,6 +117,14 @@ Route::middleware(['auth'])->group(function () {
     Route::middleware(['role:employee'])->prefix('employee')->name('employee.')->group(function () {
         Route::get('/dashboard', [\App\Http\Controllers\EmployeeController::class, 'dashboard'])->name('dashboard');
         Route::get('/chats', [\App\Http\Controllers\EmployeeController::class, 'chats'])->name('chats');
+        
+        Route::prefix('chat-assignments')->name('chat-assignments.')->group(function () {
+            Route::post('/check', [\App\Http\Controllers\ChatAssignmentController::class, 'checkAssignment'])->name('check');
+            Route::post('/claim', [\App\Http\Controllers\ChatAssignmentController::class, 'claimChat'])->name('claim');
+            Route::post('/update-status', [\App\Http\Controllers\ChatAssignmentController::class, 'updateStatus'])->name('update-status');
+            Route::post('/release', [\App\Http\Controllers\ChatAssignmentController::class, 'releaseChat'])->name('release');
+            Route::get('/list', [\App\Http\Controllers\ChatAssignmentController::class, 'getAssignments'])->name('list');
+        });
     });
     
     Route::middleware(['role:admin,agent,super_admin,employee'])->prefix('whatsapp')->name('whatsapp.')->group(function () {

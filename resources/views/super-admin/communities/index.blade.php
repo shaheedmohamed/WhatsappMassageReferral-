@@ -61,6 +61,9 @@
                     @endif
                 </td>
                 <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                    <a href="{{ route('super-admin.communities.employees', $community) }}" class="text-green-600 hover:text-green-900 ml-3">
+                        <i class="fas fa-users"></i> الموظفين
+                    </a>
                     <a href="{{ route('super-admin.communities.edit', $community) }}" class="text-blue-600 hover:text-blue-900 ml-3">
                         <i class="fas fa-edit"></i> تعديل
                     </a>
