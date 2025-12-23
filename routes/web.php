@@ -105,6 +105,7 @@ Route::middleware(['auth'])->group(function () {
             Route::get('/{employee}', [\App\Http\Controllers\SuperAdminController::class, 'showEmployee'])->name('show');
             Route::get('/{employee}/edit', [\App\Http\Controllers\SuperAdminController::class, 'editEmployee'])->name('edit');
             Route::put('/{employee}', [\App\Http\Controllers\SuperAdminController::class, 'updateEmployee'])->name('update');
+            Route::get('/{employee}/login-logs', [\App\Http\Controllers\SuperAdminController::class, 'employeeLoginLogs'])->name('login-logs');
         });
     });
     

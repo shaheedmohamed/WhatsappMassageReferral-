@@ -117,6 +117,11 @@ class User extends Authenticatable
             ->withTimestamps();
     }
 
+    public function loginLogs()
+    {
+        return $this->hasMany(LoginLog::class);
+    }
+
     public function hasPermission($permission)
     {
         if ($this->isAdmin()) {

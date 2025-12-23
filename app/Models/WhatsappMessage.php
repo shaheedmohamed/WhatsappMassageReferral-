@@ -20,6 +20,9 @@ class WhatsappMessage extends Model
         'reply_timestamp',
         'forwarded_to_admin',
         'admin_notified',
+        'assigned_user_id',
+        'assigned_at',
+        'status',
     ];
 
     protected $casts = [

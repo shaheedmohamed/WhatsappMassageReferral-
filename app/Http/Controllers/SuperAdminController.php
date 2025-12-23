@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\User;
 use App\Models\Community;
 use App\Models\WhatsappDevice;
+use App\Models\LoginLog;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 
@@ -107,7 +108,9 @@ class SuperAdminController extends Controller
     public function employees()
     {
         $employees = auth()->user()->employees()
-            ->with('community')
+            ->with(['community', 'loginLogs' => function($query) {
+                $query->latest('logged_in_at')->limit(1);
+            }])
             ->paginate(15);
         
         $communities = auth()->user()->ownedCommunities;
@@ -192,5 +195,16 @@ class SuperAdminController extends Controller
         
         return redirect()->route('super-admin.employees.index')
             ->with('success', 'تم تحديث بيانات الموظف بنجاح');
+    }
+    
+    public function employeeLoginLogs(User $employee)
+    {
+        $this->authorize('view', $employee);
+        
+        $loginLogs = LoginLog::where('user_id', $employee->id)
+            ->orderBy('logged_in_at', 'desc')
+            ->paginate(20);
+        
+        return view('super-admin.employees.login-logs', compact('employee', 'loginLogs'));
     }
 }

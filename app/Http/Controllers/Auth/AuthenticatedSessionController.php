@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Auth;
 
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Auth\LoginRequest;
+use App\Models\LoginLog;
 use App\Providers\RouteServiceProvider;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -29,7 +30,28 @@ class AuthenticatedSessionController extends Controller
 
         $request->session()->regenerate();
 
-        return redirect()->intended(RouteServiceProvider::HOME);
+        $user = Auth::user();
+        
+        try {
+            LoginLog::create([
+                'user_id' => $user->id,
+                'ip_address' => $request->ip(),
+                'user_agent' => $request->userAgent(),
+                'logged_in_at' => now(),
+            ]);
+        } catch (\Exception $e) {
+            \Log::error('Failed to create login log: ' . $e->getMessage());
+        }
+        
+        if ($user->isSuperAdmin()) {
+            return redirect()->intended(route('super-admin.dashboard'));
+        } elseif ($user->isAdmin()) {
+            return redirect()->intended(route('admin.dashboard'));
+        } elseif ($user->isEmployee()) {
+            return redirect()->intended(route('employee.dashboard'));
+        }
+        
+        return redirect()->intended(route('whatsapp.chats'));
     }
 
     /**

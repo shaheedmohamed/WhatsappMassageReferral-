@@ -19,14 +19,14 @@ class EmployeeController extends Controller
         
         $stats = [
             'total_messages' => WhatsappMessage::whereIn('device_id', $communityDevices)->count(),
-            'assigned_messages' => $employee->assignedMessages()->count(),
-            'pending_messages' => $employee->assignedMessages()->where('status', 'pending')->count(),
-            'completed_messages' => $employee->assignedMessages()->where('status', 'completed')->count(),
+            'assigned_messages' => WhatsappMessage::whereIn('device_id', $communityDevices)->count(),
+            'pending_messages' => WhatsappMessage::whereIn('device_id', $communityDevices)->where('replied', false)->count(),
+            'completed_messages' => WhatsappMessage::whereIn('device_id', $communityDevices)->where('replied', true)->count(),
         ];
         
-        $recentMessages = $employee->assignedMessages()
+        $recentMessages = WhatsappMessage::whereIn('device_id', $communityDevices)
             ->with(['device'])
-            ->latest()
+            ->latest('message_timestamp')
             ->take(10)
             ->get();
         
@@ -39,7 +39,7 @@ class EmployeeController extends Controller
         
         // Get devices assigned to employee's community
         $devices = $employee->community 
-            ? $employee->community->devices
+            ? $employee->community->devices()->where('status', 'connected')->get()
             : collect();
         
         return view('employee.chats', compact('devices'));

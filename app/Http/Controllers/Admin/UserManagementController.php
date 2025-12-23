@@ -14,6 +14,8 @@ class UserManagementController extends Controller
     {
         $users = User::with(['chatAssignments' => function($query) {
             $query->where('status', 'active');
+        }, 'loginLogs' => function($query) {
+            $query->latest('logged_in_at')->limit(1);
         }])
         ->withCount(['assignedMessages', 'chatAssignments'])
         ->orderBy('created_at', 'desc')

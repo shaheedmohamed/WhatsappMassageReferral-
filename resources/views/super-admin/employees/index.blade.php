@@ -65,7 +65,11 @@
                     @endif
                 </td>
                 <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                    {{ $employee->last_activity_at ? $employee->last_activity_at->diffForHumans() : 'لم يسجل دخول بعد' }}
+                    @if($employee->loginLogs->isNotEmpty())
+                        {{ $employee->loginLogs->first()->logged_in_at->diffForHumans() }}
+                    @else
+                        لم يسجل دخول بعد
+                    @endif
                 </td>
                 <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
                     <a href="{{ route('super-admin.employees.show', $employee) }}" class="text-green-600 hover:text-green-900 ml-3">
@@ -73,6 +77,9 @@
                     </a>
                     <a href="{{ route('super-admin.employees.edit', $employee) }}" class="text-blue-600 hover:text-blue-900 ml-3">
                         <i class="fas fa-edit"></i> تعديل
+                    </a>
+                    <a href="{{ route('super-admin.employees.login-logs', $employee) }}" class="text-purple-600 hover:text-purple-900 ml-3">
+                        <i class="fas fa-history"></i> السجل
                     </a>
                 </td>
             </tr>

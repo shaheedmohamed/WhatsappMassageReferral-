@@ -60,9 +60,13 @@
                             <span class="w-2 h-2 rounded-full ml-2 {{ $user->status === 'online' ? 'bg-green-500' : 'bg-gray-400' }}"></span>
                             <span class="text-sm text-gray-500">{{ $user->status === 'online' ? 'متصل' : 'غير متصل' }}</span>
                         </div>
-                        @if($user->last_activity_at)
+                        @if($user->loginLogs->isNotEmpty())
                         <div class="text-xs text-gray-400 mt-1">
-                            آخر نشاط: {{ $user->last_activity_at->diffForHumans() }}
+                            آخر نشاط: {{ $user->loginLogs->first()->logged_in_at->diffForHumans() }}
+                        </div>
+                        @else
+                        <div class="text-xs text-gray-400 mt-1">
+                            لم يسجل دخول بعد
                         </div>
                         @endif
                     </td>
