@@ -82,6 +82,42 @@
                 </div>
             </div>
 
+            <div class="mb-4" id="devices-section">
+                <label class="block text-sm font-medium text-gray-700 mb-2">الأجهزة المسندة</label>
+                <p class="text-xs text-gray-500 mb-3">اختر الأجهزة التي يمكن للموظف الوصول إليها</p>
+                <div class="space-y-2 max-h-60 overflow-y-auto border border-gray-200 rounded-lg p-3">
+                    @php
+                        $devices = \App\Models\WhatsappDevice::all();
+                        $assignedDevices = old('assigned_devices', $user->assigned_devices ? json_decode($user->assigned_devices, true) : []);
+                    @endphp
+                    @forelse($devices as $device)
+                    <label class="flex items-center p-2 hover:bg-gray-50 rounded">
+                        <input type="checkbox" name="assigned_devices[]" value="{{ $device->id }}" class="ml-2"
+                            {{ in_array($device->id, $assignedDevices) ? 'checked' : '' }}>
+                        <div class="flex items-center flex-1">
+                            <div class="w-8 h-8 rounded-full flex items-center justify-center ml-2
+                                {{ $device->status === 'connected' ? 'bg-green-100' : 'bg-gray-200' }}">
+                                <i class="fas fa-mobile-alt text-sm
+                                    {{ $device->status === 'connected' ? 'text-green-600' : 'text-gray-500' }}"></i>
+                            </div>
+                            <div>
+                                <span class="text-sm font-medium text-gray-700">{{ $device->device_name }}</span>
+                                <span class="text-xs text-gray-500 mr-2">
+                                    @if($device->status === 'connected')
+                                        <i class="fas fa-check-circle text-green-500"></i> متصل
+                                    @else
+                                        <i class="fas fa-times-circle text-gray-400"></i> غير متصل
+                                    @endif
+                                </span>
+                            </div>
+                        </div>
+                    </label>
+                    @empty
+                    <p class="text-sm text-gray-500 text-center py-4">لا توجد أجهزة متاحة</p>
+                    @endforelse
+                </div>
+            </div>
+
             <div class="mb-6">
                 <label class="flex items-center">
                     <input type="checkbox" name="is_active" value="1" class="ml-2" {{ old('is_active', $user->is_active) ? 'checked' : '' }}>

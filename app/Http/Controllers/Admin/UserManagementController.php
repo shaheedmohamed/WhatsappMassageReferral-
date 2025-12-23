@@ -60,6 +60,7 @@ class UserManagementController extends Controller
             'password' => 'nullable|string|min:8|confirmed',
             'role' => 'required|in:admin,agent',
             'permissions' => 'nullable|array',
+            'assigned_devices' => 'nullable|array',
             'is_active' => 'boolean',
         ]);
 
@@ -70,6 +71,13 @@ class UserManagementController extends Controller
         }
 
         $validated['is_active'] = $request->has('is_active');
+        
+        // Handle assigned devices
+        if (isset($validated['assigned_devices'])) {
+            $validated['assigned_devices'] = json_encode($validated['assigned_devices']);
+        } else {
+            $validated['assigned_devices'] = null;
+        }
 
         $user->update($validated);
 

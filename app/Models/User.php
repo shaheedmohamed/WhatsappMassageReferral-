@@ -21,6 +21,10 @@ class User extends Authenticatable
         'name',
         'email',
         'password',
+        'role',
+        'permissions',
+        'assigned_devices',
+        'is_active',
     ];
 
     /**
@@ -48,6 +52,11 @@ class User extends Authenticatable
     public function whatsappDevices()
     {
         return $this->hasMany(WhatsappDevice::class);
+    }
+
+    public function workLogs()
+    {
+        return $this->hasMany(AgentWorkLog::class);
     }
 
     public function chatAssignments()

@@ -43,6 +43,11 @@
                     <i class="fas fa-mobile-alt ml-3"></i>
                     <span>الأجهزة المتصلة</span>
                 </a>
+                
+                <a href="{{ route('admin.reports.index') }}" class="flex items-center px-6 py-3 hover:bg-green-500 transition {{ request()->routeIs('admin.reports.*') ? 'bg-green-500' : '' }}">
+                    <i class="fas fa-chart-bar ml-3"></i>
+                    <span>التقارير</span>
+                </a>
                 @endif
                 
                 <a href="{{ route('whatsapp.chats') }}" class="flex items-center px-6 py-3 hover:bg-green-500 transition {{ request()->routeIs('whatsapp.chats') ? 'bg-green-500' : '' }}">

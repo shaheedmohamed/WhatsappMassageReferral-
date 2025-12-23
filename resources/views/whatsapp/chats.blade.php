@@ -148,6 +148,13 @@
             
             <form id="newMessageForm" class="space-y-4">
                 <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">اختر الجهاز</label>
+                    <select id="newMessageDevice" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-green-500" required>
+                        <option value="">اختر جهاز...</option>
+                    </select>
+                </div>
+                
+                <div>
                     <label class="block text-sm font-medium text-gray-700 mb-2">رقم الهاتف</label>
                     <input type="text" id="newPhoneNumber" placeholder="966500000000" 
                         class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-green-500"
@@ -179,6 +186,9 @@
         let devices = [];
         let currentChatId = null;
         let currentDeviceId = null;
+        let currentChatDeviceId = null;
+        let allChats = [];
+        let allDevices = [];
         let messagesInterval = null;
 
         async function loadChats() {
@@ -212,15 +222,20 @@
 
         function updateDeviceFilter() {
             const select = document.getElementById('deviceFilter');
+            const newMessageSelect = document.getElementById('newMessageDevice');
             const currentValue = select.value;
             
-            select.innerHTML = '<option value="">جميع الأجهزة</option>' + 
-                devices.map(device => {
-                    const displayName = device.phone_number || device.name || 'جهاز غير معروف';
-                    return `<option value="${device.id}">${displayName}</option>`;
-                }).join('');
+            const optionsHTML = devices.map(device => {
+                const displayName = device.phone_number || device.name || 'جهاز غير معروف';
+                return `<option value="${device.id}">${displayName}</option>`;
+            }).join('');
             
+            select.innerHTML = '<option value="">جميع الأجهزة</option>' + optionsHTML;
             select.value = currentValue;
+            
+            if (newMessageSelect) {
+                newMessageSelect.innerHTML = '<option value="">اختر جهاز...</option>' + optionsHTML;
+            }
         }
 
         function displayChats(chatList) {
@@ -266,7 +281,12 @@
 
         async function openChat(chatId, chatName, deviceId = '') {
             currentChatId = chatId;
-            currentDeviceId = deviceId;
+            currentChatDeviceId = deviceId;
+            
+            if (!deviceId) {
+                alert('خطأ: لم يتم تحديد الجهاز');
+                return;
+            }
             
             document.getElementById('noChatSelected').classList.add('hidden');
             document.getElementById('chatArea').classList.remove('hidden');
@@ -283,18 +303,36 @@
 
         async function loadMessages(chatId, deviceId = '') {
             try {
-                let url = `{{ url('/whatsapp/api/messages') }}/${encodeURIComponent(chatId)}`;
-                if (deviceId) {
-                    url += `?device_id=${deviceId}`;
+                if (!deviceId) {
+                    console.error('Device ID is required');
+                    document.getElementById('messagesContainer').innerHTML = `
+                        <div class="flex items-center justify-center h-full">
+                            <p class="text-red-500">خطأ: لم يتم تحديد الجهاز</p>
+                        </div>
+                    `;
+                    return;
                 }
+                
+                let url = `{{ url('/whatsapp/api/messages') }}/${encodeURIComponent(chatId)}?device_id=${deviceId}`;
                 const response = await fetch(url);
                 const data = await response.json();
                 
                 if (data.success && data.messages) {
                     displayMessages(data.messages);
+                } else {
+                    document.getElementById('messagesContainer').innerHTML = `
+                        <div class="flex items-center justify-center h-full">
+                            <p class="text-red-500">خطأ: ${data.error || 'فشل تحميل الرسائل'}</p>
+                        </div>
+                    `;
                 }
             } catch (error) {
                 console.error('Error loading messages:', error);
+                document.getElementById('messagesContainer').innerHTML = `
+                    <div class="flex items-center justify-center h-full">
+                        <p class="text-red-500">خطأ في الاتصال بالخادم</p>
+                    </div>
+                `;
             }
         }
 
@@ -336,7 +374,12 @@
             const input = document.getElementById('messageInput');
             const message = input.value.trim();
             
-            if (!message || !currentChatId) return;
+            if (!message || !currentChatId || !currentChatDeviceId) {
+                if (!currentChatDeviceId) {
+                    alert('خطأ: لم يتم تحديد الجهاز');
+                }
+                return;
+            }
             
             try {
                 const response = await fetch('{{ route("whatsapp.api.send") }}', {
@@ -348,7 +391,7 @@
                     body: JSON.stringify({
                         to: currentChatId,
                         message: message,
-                        device_id: currentDeviceId
+                        device_id: currentChatDeviceId
                     })
                 });
                 
@@ -356,7 +399,7 @@
                 
                 if (data.success) {
                     input.value = '';
-                    await loadMessages(currentChatId, currentDeviceId);
+                    await loadMessages(currentChatId, currentChatDeviceId);
                 } else {
                     alert('فشل إرسال الرسالة: ' + (data.error || 'خطأ غير معروف'));
                 }
@@ -406,6 +449,7 @@
 
         function hideNewMessageModal() {
             document.getElementById('newMessageModal').classList.add('hidden');
+            document.getElementById('newMessageDevice').value = '';
             document.getElementById('newPhoneNumber').value = '';
             document.getElementById('newMessageText').value = '';
         }
@@ -413,10 +457,16 @@
         document.getElementById('newMessageForm').addEventListener('submit', async (e) => {
             e.preventDefault();
             
+            const deviceId = document.getElementById('newMessageDevice').value;
             const phoneNumber = document.getElementById('newPhoneNumber').value.trim();
             const messageText = document.getElementById('newMessageText').value.trim();
             
-            if (!phoneNumber || !messageText) return;
+            if (!deviceId || !phoneNumber || !messageText) {
+                if (!deviceId) {
+                    alert('يرجى اختيار الجهاز');
+                }
+                return;
+            }
             
             try {
                 const response = await fetch('{{ route("whatsapp.api.send") }}', {
@@ -427,7 +477,8 @@
                     },
                     body: JSON.stringify({
                         to: phoneNumber,
-                        message: messageText
+                        message: messageText,
+                        device_id: parseInt(deviceId)
                     })
                 });
                 

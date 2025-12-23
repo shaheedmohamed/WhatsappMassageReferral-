@@ -101,10 +101,11 @@ class WhatsAppService
         }
     }
 
-    public function sendMessage(string $to, string $message): array
+    public function sendMessage(string $to, string $message, string $sessionId): array
     {
         try {
-            $response = Http::timeout(30)->post("{$this->nodeServiceUrl}/send-message", [
+            $response = Http::timeout(30)->post("{$this->nodeServiceUrl}/send", [
+                'sessionId' => $sessionId,
                 'to' => $to,
                 'message' => $message
             ]);
@@ -114,6 +115,7 @@ class WhatsAppService
                 
                 Log::info('WhatsApp message sent successfully', [
                     'to' => $to,
+                    'sessionId' => $sessionId,
                     'response' => $data
                 ]);
 
@@ -122,6 +124,7 @@ class WhatsAppService
 
             Log::error('WhatsApp send message error', [
                 'to' => $to,
+                'sessionId' => $sessionId,
                 'status' => $response->status(),
                 'response' => $response->json()
             ]);
@@ -134,6 +137,7 @@ class WhatsAppService
         } catch (Exception $e) {
             Log::error('WhatsApp send message exception', [
                 'to' => $to,
+                'sessionId' => $sessionId,
                 'message' => $e->getMessage()
             ]);
 

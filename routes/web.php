@@ -5,6 +5,7 @@ use App\Http\Controllers\Admin\DashboardController as AdminDashboardController;
 use App\Http\Controllers\Admin\DeviceController;
 use App\Http\Controllers\Admin\UserManagementController;
 use App\Http\Controllers\Admin\ActivityController;
+use App\Http\Controllers\Agent\DashboardController as AgentDashboardController;
 use App\Http\Controllers\WhatsAppWebController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\WhatsAppWebhookController;
@@ -52,6 +53,15 @@ Route::middleware(['auth'])->group(function () {
             Route::get('/', [ActivityController::class, 'index'])->name('index');
             Route::get('/user/{user}', [ActivityController::class, 'userActivity'])->name('user');
             Route::post('/assign-chat', [ActivityController::class, 'assignChat'])->name('assign-chat');
+        });
+        
+        Route::prefix('reports')->name('reports.')->group(function () {
+            Route::get('/', [\App\Http\Controllers\Admin\ReportsController::class, 'index'])->name('index');
+            Route::get('/general', [\App\Http\Controllers\Admin\ReportsController::class, 'general'])->name('general');
+            Route::get('/agents', [\App\Http\Controllers\Admin\ReportsController::class, 'agents'])->name('agents');
+            Route::get('/agents/{user}', [\App\Http\Controllers\Admin\ReportsController::class, 'agentDetail'])->name('agent-detail');
+            Route::get('/export/general', [\App\Http\Controllers\Admin\ReportsController::class, 'exportGeneral'])->name('export-general');
+            Route::get('/export/agents', [\App\Http\Controllers\Admin\ReportsController::class, 'exportAgents'])->name('export-agents');
         });
         
         Route::prefix('devices')->name('devices.')->group(function () {

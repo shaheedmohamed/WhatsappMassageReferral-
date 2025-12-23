@@ -151,10 +151,10 @@ class WhatsAppWebController extends Controller
         $request->validate([
             'to' => 'required|string',
             'message' => 'required|string',
-            'device_id' => 'required|string'
+            'device_id' => 'required|integer',
         ]);
 
-        $device = WhatsappDevice::find($request->device_id);
+        $device = WhatsappDevice::find($request->input('device_id'));
         
         if (!$device) {
             return response()->json([
@@ -162,10 +162,10 @@ class WhatsAppWebController extends Controller
                 'error' => 'Device not found'
             ]);
         }
-        
+
         $result = $this->whatsapp->sendMessage(
-            $request->to, 
-            $request->message, 
+            $request->input('to'),
+            $request->input('message'),
             $device->session_id
         );
         
