@@ -1,17 +1,36 @@
-const { Client, LocalAuth } = require('whatsapp-web.js');
+const { Client, LocalAuth, MessageMedia } = require('whatsapp-web.js');
 const qrcode = require('qrcode-terminal');
 const express = require('express');
 const bodyParser = require('body-parser');
 const cors = require('cors');
 const dotenv = require('dotenv');
+const multer = require('multer');
+const fs = require('fs');
+const path = require('path');
 
 dotenv.config();
 
 const app = express();
 const PORT = process.env.PORT || 3000;
 
+// Configure multer for file uploads
+const storage = multer.diskStorage({
+    destination: (req, file, cb) => {
+        const uploadDir = './uploads';
+        if (!fs.existsSync(uploadDir)) {
+            fs.mkdirSync(uploadDir);
+        }
+        cb(null, uploadDir);
+    },
+    filename: (req, file, cb) => {
+        cb(null, Date.now() + '-' + file.originalname);
+    }
+});
+const upload = multer({ storage: storage });
+
 app.use(cors());
 app.use(bodyParser.json());
+app.use(bodyParser.urlencoded({ extended: true }));
 
 // Store multiple clients
 const clients = new Map();
@@ -374,7 +393,8 @@ app.get('/messages/:sessionId/:chatId', async (req, res) => {
             fromMe: msg.fromMe,
             author: msg.author,
             type: msg.type,
-            hasMedia: msg.hasMedia
+            hasMedia: msg.hasMedia,
+            mediaUrl: msg.hasMedia ? `/media/${sessionId}/${encodeURIComponent(msg.id._serialized)}` : null
         }));
 
         res.json({
@@ -388,6 +408,158 @@ app.get('/messages/:sessionId/:chatId', async (req, res) => {
         res.status(500).json({
             success: false,
             error: error.message
+        });
+    }
+});
+
+// Get media file for a message
+app.get('/media/:sessionId/:messageId', async (req, res) => {
+    try {
+        const { sessionId, messageId } = req.params;
+        
+        const client = clients.get(sessionId);
+        const status = clientStatus.get(sessionId);
+
+        if (!client || status !== 'ready') {
+            return res.status(503).json({
+                success: false,
+                error: 'الجلسة غير متصلة'
+            });
+        }
+
+        // Find the message by ID
+        const chats = await client.getChats();
+        let targetMessage = null;
+        
+        for (const chat of chats) {
+            const messages = await chat.fetchMessages({ limit: 100 });
+            targetMessage = messages.find(msg => msg.id._serialized === decodeURIComponent(messageId));
+            if (targetMessage) break;
+        }
+
+        if (!targetMessage) {
+            return res.status(404).json({
+                success: false,
+                error: 'الرسالة غير موجودة'
+            });
+        }
+
+        if (!targetMessage.hasMedia) {
+            return res.status(400).json({
+                success: false,
+                error: 'هذه الرسالة لا تحتوي على وسائط'
+            });
+        }
+
+        // Download the media
+        const media = await targetMessage.downloadMedia();
+        
+        if (!media) {
+            return res.status(500).json({
+                success: false,
+                error: 'فشل تحميل الوسائط'
+            });
+        }
+
+        // Convert base64 to buffer
+        const buffer = Buffer.from(media.data, 'base64');
+        
+        // Set appropriate content type
+        res.setHeader('Content-Type', media.mimetype);
+        res.setHeader('Content-Length', buffer.length);
+        res.send(buffer);
+
+    } catch (error) {
+        console.error('❌ خطأ في جلب الوسائط:', error);
+        res.status(500).json({
+            success: false,
+            error: error.message
+        });
+    }
+});
+
+// Send audio message
+app.post('/send-audio', upload.single('audio'), async (req, res) => {
+    try {
+        const { to, sessionId } = req.body;
+        const audioFile = req.file;
+
+        if (!sessionId) {
+            return res.status(400).json({
+                success: false,
+                error: 'يجب توفير sessionId'
+            });
+        }
+
+        const client = clients.get(sessionId);
+        const status = clientStatus.get(sessionId);
+
+        if (!client || status !== 'ready') {
+            return res.status(503).json({
+                success: false,
+                error: 'الجلسة غير متصلة'
+            });
+        }
+
+        if (!to || !audioFile) {
+            return res.status(400).json({
+                success: false,
+                error: 'يجب توفير رقم الهاتف والملف الصوتي'
+            });
+        }
+
+        let phoneNumber = to;
+        if (!phoneNumber.includes('@c.us')) {
+            phoneNumber = phoneNumber.replace(/[^0-9]/g, '') + '@c.us';
+        }
+
+        // Read audio file and create MessageMedia
+        const audioData = fs.readFileSync(audioFile.path, { encoding: 'base64' });
+        
+        // Determine mimetype - force to audio/ogg for voice messages
+        let mimetype = 'audio/ogg; codecs=opus';
+        if (audioFile.mimetype.includes('webm')) {
+            mimetype = 'audio/ogg; codecs=opus';
+        }
+        
+        const media = new MessageMedia(
+            mimetype,
+            audioData,
+            'voice.ogg'
+        );
+
+        // Send audio message without sendAudioAsVoice option to avoid WhatsApp Web bugs
+        const sentMessage = await client.sendMessage(phoneNumber, media);
+
+        // Delete temporary file with delay to avoid EBUSY error
+        setTimeout(() => {
+            try {
+                if (fs.existsSync(audioFile.path)) {
+                    fs.unlinkSync(audioFile.path);
+                }
+            } catch (err) {
+                console.log('⚠️ Could not delete temp file:', err.message);
+            }
+        }, 1000);
+
+        res.json({
+            success: true,
+            messageId: sentMessage.id.id,
+            timestamp: sentMessage.timestamp,
+            message: 'تم إرسال الرسالة الصوتية بنجاح'
+        });
+
+    } catch (error) {
+        console.error('❌ خطأ في إرسال الرسالة الصوتية:', error);
+        
+        // Clean up file on error
+        if (req.file && fs.existsSync(req.file.path)) {
+            fs.unlinkSync(req.file.path);
+        }
+        
+        res.status(500).json({
+            success: false,
+            error: error.message || 'فشل إرسال الرسالة الصوتية'
         });
     }
 });

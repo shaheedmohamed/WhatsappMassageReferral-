@@ -104,7 +104,7 @@ class WhatsAppService
     public function sendMessage(string $to, string $message, string $sessionId): array
     {
         try {
-            $response = Http::timeout(30)->post("{$this->nodeServiceUrl}/send", [
+            $response = Http::timeout(30)->post("{$this->nodeServiceUrl}/send-message", [
                 'sessionId' => $sessionId,
                 'to' => $to,
                 'message' => $message
