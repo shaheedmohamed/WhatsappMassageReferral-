@@ -23,37 +23,77 @@
             </div>
             
             <nav class="mt-6">
-                <a href="{{ route('admin.dashboard') }}" class="flex items-center px-6 py-3 hover:bg-green-500 transition {{ request()->routeIs('admin.dashboard') ? 'bg-green-500' : '' }}">
-                    <i class="fas fa-home ml-3"></i>
-                    <span>الرئيسية</span>
-                </a>
-                
                 @if(auth()->user()->isAdmin())
-                <a href="{{ route('admin.users.index') }}" class="flex items-center px-6 py-3 hover:bg-green-500 transition {{ request()->routeIs('admin.users.*') ? 'bg-green-500' : '' }}">
-                    <i class="fas fa-users ml-3"></i>
-                    <span>إدارة المستخدمين</span>
-                </a>
-                
-                <a href="{{ route('admin.activity.index') }}" class="flex items-center px-6 py-3 hover:bg-green-500 transition {{ request()->routeIs('admin.activity.*') ? 'bg-green-500' : '' }}">
-                    <i class="fas fa-chart-line ml-3"></i>
-                    <span>نشاط المستخدمين</span>
-                </a>
-                
-                <a href="{{ route('admin.devices.index') }}" class="flex items-center px-6 py-3 hover:bg-green-500 transition {{ request()->routeIs('admin.devices.*') ? 'bg-green-500' : '' }}">
-                    <i class="fas fa-mobile-alt ml-3"></i>
-                    <span>الأجهزة المتصلة</span>
-                </a>
-                
-                <a href="{{ route('admin.reports.index') }}" class="flex items-center px-6 py-3 hover:bg-green-500 transition {{ request()->routeIs('admin.reports.*') ? 'bg-green-500' : '' }}">
-                    <i class="fas fa-chart-bar ml-3"></i>
-                    <span>التقارير</span>
-                </a>
+                    <a href="{{ route('admin.dashboard') }}" class="flex items-center px-6 py-3 hover:bg-green-500 transition {{ request()->routeIs('admin.dashboard') ? 'bg-green-500' : '' }}">
+                        <i class="fas fa-home ml-3"></i>
+                        <span>الرئيسية</span>
+                    </a>
+                    
+                    <a href="{{ route('admin.users.index') }}" class="flex items-center px-6 py-3 hover:bg-green-500 transition {{ request()->routeIs('admin.users.*') ? 'bg-green-500' : '' }}">
+                        <i class="fas fa-users ml-3"></i>
+                        <span>إدارة المستخدمين</span>
+                    </a>
+                    
+                    <a href="{{ route('admin.super-admins.index') }}" class="flex items-center px-6 py-3 hover:bg-green-500 transition {{ request()->routeIs('admin.super-admins.*') ? 'bg-green-500' : '' }}">
+                        <i class="fas fa-user-shield ml-3"></i>
+                        <span>المديرين الفائقين</span>
+                    </a>
+                    
+                    <a href="{{ route('admin.activity.index') }}" class="flex items-center px-6 py-3 hover:bg-green-500 transition {{ request()->routeIs('admin.activity.*') ? 'bg-green-500' : '' }}">
+                        <i class="fas fa-chart-line ml-3"></i>
+                        <span>نشاط المستخدمين</span>
+                    </a>
+                    
+                    <a href="{{ route('admin.devices.index') }}" class="flex items-center px-6 py-3 hover:bg-green-500 transition {{ request()->routeIs('admin.devices.*') ? 'bg-green-500' : '' }}">
+                        <i class="fas fa-mobile-alt ml-3"></i>
+                        <span>الأجهزة المتصلة</span>
+                    </a>
+                    
+                    <a href="{{ route('admin.reports.index') }}" class="flex items-center px-6 py-3 hover:bg-green-500 transition {{ request()->routeIs('admin.reports.*') ? 'bg-green-500' : '' }}">
+                        <i class="fas fa-chart-bar ml-3"></i>
+                        <span>التقارير</span>
+                    </a>
+                    
+                    <a href="{{ route('whatsapp.chats') }}" class="flex items-center px-6 py-3 hover:bg-green-500 transition {{ request()->routeIs('whatsapp.chats') ? 'bg-green-500' : '' }}">
+                        <i class="fas fa-comments ml-3"></i>
+                        <span>المحادثات</span>
+                    </a>
+                @elseif(auth()->user()->isSuperAdmin())
+                    <a href="{{ route('super-admin.dashboard') }}" class="flex items-center px-6 py-3 hover:bg-green-500 transition {{ request()->routeIs('super-admin.dashboard') ? 'bg-green-500' : '' }}">
+                        <i class="fas fa-home ml-3"></i>
+                        <span>الرئيسية</span>
+                    </a>
+                    
+                    <a href="{{ route('super-admin.communities.index') }}" class="flex items-center px-6 py-3 hover:bg-green-500 transition {{ request()->routeIs('super-admin.communities.*') ? 'bg-green-500' : '' }}">
+                        <i class="fas fa-users ml-3"></i>
+                        <span>المجتمعات</span>
+                    </a>
+                    
+                    <a href="{{ route('super-admin.employees.index') }}" class="flex items-center px-6 py-3 hover:bg-green-500 transition {{ request()->routeIs('super-admin.employees.*') ? 'bg-green-500' : '' }}">
+                        <i class="fas fa-user-tie ml-3"></i>
+                        <span>الموظفين</span>
+                    </a>
+                    
+                    <a href="{{ route('whatsapp.chats') }}" class="flex items-center px-6 py-3 hover:bg-green-500 transition {{ request()->routeIs('whatsapp.chats') ? 'bg-green-500' : '' }}">
+                        <i class="fas fa-comments ml-3"></i>
+                        <span>المحادثات</span>
+                    </a>
+                @elseif(auth()->user()->isEmployee())
+                    <a href="{{ route('employee.dashboard') }}" class="flex items-center px-6 py-3 hover:bg-green-500 transition {{ request()->routeIs('employee.dashboard') ? 'bg-green-500' : '' }}">
+                        <i class="fas fa-home ml-3"></i>
+                        <span>الرئيسية</span>
+                    </a>
+                    
+                    <a href="{{ route('employee.chats') }}" class="flex items-center px-6 py-3 hover:bg-green-500 transition {{ request()->routeIs('employee.chats') ? 'bg-green-500' : '' }}">
+                        <i class="fas fa-comments ml-3"></i>
+                        <span>الدردشات</span>
+                    </a>
+                    
+                    <a href="{{ route('whatsapp.chats') }}" class="flex items-center px-6 py-3 hover:bg-green-500 transition {{ request()->routeIs('whatsapp.chats') ? 'bg-green-500' : '' }}">
+                        <i class="fab fa-whatsapp ml-3"></i>
+                        <span>واتساب</span>
+                    </a>
                 @endif
-                
-                <a href="{{ route('whatsapp.chats') }}" class="flex items-center px-6 py-3 hover:bg-green-500 transition {{ request()->routeIs('whatsapp.chats') ? 'bg-green-500' : '' }}">
-                    <i class="fas fa-comments ml-3"></i>
-                    <span>المحادثات</span>
-                </a>
             </nav>
 
             <div class="absolute bottom-0 w-64 p-6 border-t border-green-500">

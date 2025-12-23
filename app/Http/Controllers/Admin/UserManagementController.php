@@ -33,15 +33,22 @@ class UserManagementController extends Controller
             'name' => 'required|string|max:255',
             'email' => 'required|email|unique:users,email',
             'password' => 'required|string|min:8|confirmed',
-            'role' => 'required|in:admin,agent',
+            'role' => 'required|in:admin,super_admin,employee',
             'permissions' => 'nullable|array',
             'is_active' => 'boolean',
+            'assigned_devices' => 'nullable|array',
+            'assigned_devices.*' => 'exists:whatsapp_devices,id',
         ]);
 
         $validated['password'] = Hash::make($validated['password']);
         $validated['is_active'] = $request->has('is_active');
         
         $user = User::create($validated);
+        
+        // Assign devices to super admin
+        if ($user->isSuperAdmin() && $request->has('assigned_devices')) {
+            $user->assignedDevices()->sync($request->assigned_devices);
+        }
 
         return redirect()->route('admin.users.index')
             ->with('success', 'تم إضافة المستخدم بنجاح');
@@ -58,9 +65,10 @@ class UserManagementController extends Controller
             'name' => 'required|string|max:255',
             'email' => ['required', 'email', Rule::unique('users')->ignore($user->id)],
             'password' => 'nullable|string|min:8|confirmed',
-            'role' => 'required|in:admin,agent',
+            'role' => 'required|in:admin,super_admin,employee',
             'permissions' => 'nullable|array',
             'assigned_devices' => 'nullable|array',
+            'assigned_devices.*' => 'exists:whatsapp_devices,id',
             'is_active' => 'boolean',
         ]);
 
@@ -72,14 +80,16 @@ class UserManagementController extends Controller
 
         $validated['is_active'] = $request->has('is_active');
         
-        // Handle assigned devices
-        if (isset($validated['assigned_devices'])) {
-            $validated['assigned_devices'] = json_encode($validated['assigned_devices']);
-        } else {
-            $validated['assigned_devices'] = null;
-        }
+        // Remove assigned_devices from validated array as we'll handle it separately
+        $assignedDevices = $validated['assigned_devices'] ?? [];
+        unset($validated['assigned_devices']);
 
         $user->update($validated);
+        
+        // Sync devices for super admin
+        if ($user->isSuperAdmin()) {
+            $user->assignedDevices()->sync($assignedDevices);
+        }
 
         return redirect()->route('admin.users.index')
             ->with('success', 'تم تحديث المستخدم بنجاح');

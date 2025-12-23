@@ -235,13 +235,35 @@ app.post('/send-message', async (req, res) => {
             });
         }
 
-        let phoneNumber = to.replace(/[^0-9]/g, '');
+        // Handle the chat ID properly to avoid "No LID for user" error
+        console.log('📤 Attempting to send message to:', to);
         
-        if (!phoneNumber.endsWith('@c.us')) {
-            phoneNumber = phoneNumber + '@c.us';
+        let finalChatId = to;
+        
+        // If the ID doesn't have @ symbol, it's a phone number
+        if (!to.includes('@')) {
+            const phoneNumber = to.replace(/[^0-9]/g, '');
+            finalChatId = phoneNumber + '@c.us';
         }
-
-        const sentMessage = await client.sendMessage(phoneNumber, message);
+        
+        console.log('📱 Using chat ID:', finalChatId);
+        
+        // Get all chats to find the correct one
+        const chats = await client.getChats();
+        const targetChat = chats.find(chat => 
+            chat.id._serialized === finalChatId || 
+            chat.id.user === finalChatId.replace('@c.us', '') ||
+            chat.id._serialized.includes(finalChatId.replace('@c.us', ''))
+        );
+        
+        if (targetChat) {
+            console.log('✅ Found chat:', targetChat.id._serialized);
+            finalChatId = targetChat.id._serialized;
+        } else {
+            console.log('⚠️ Chat not found in list, using provided ID');
+        }
+        
+        const sentMessage = await client.sendMessage(finalChatId, message);
 
         res.json({
             success: true,

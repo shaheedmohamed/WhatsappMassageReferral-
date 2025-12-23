@@ -51,12 +51,45 @@
                 <label for="role" class="block text-sm font-medium text-gray-700 mb-2">الدور</label>
                 <select name="role" id="role" required
                     class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent">
-                    <option value="agent" {{ old('role') === 'agent' ? 'selected' : '' }}>موظف خدمة عملاء</option>
+                    <option value="employee" {{ old('role') === 'employee' ? 'selected' : '' }}>موظف</option>
+                    <option value="super_admin" {{ old('role') === 'super_admin' ? 'selected' : '' }}>مدير فائق</option>
                     <option value="admin" {{ old('role') === 'admin' ? 'selected' : '' }}>مدير</option>
                 </select>
                 @error('role')
                     <p class="text-red-500 text-sm mt-1">{{ $message }}</p>
                 @enderror
+            </div>
+
+            <div class="mb-4" id="devices-section" style="display: none;">
+                <label class="block text-sm font-medium text-gray-700 mb-2">الأجهزة المخصصة (للمدير الفائق)</label>
+                <p class="text-sm text-gray-600 mb-3">اختر الأجهزة التي سيديرها المدير الفائق</p>
+                @php
+                    $devices = \App\Models\WhatsappDevice::all();
+                @endphp
+                @if($devices->count() > 0)
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-3 max-h-60 overflow-y-auto border border-gray-200 rounded-lg p-3">
+                    @foreach($devices as $device)
+                    <label class="flex items-center p-2 border border-gray-200 rounded hover:bg-gray-50 cursor-pointer">
+                        <input type="checkbox" name="assigned_devices[]" value="{{ $device->id }}" 
+                            {{ in_array($device->id, old('assigned_devices', [])) ? 'checked' : '' }}
+                            class="ml-2 h-4 w-4 text-green-600 focus:ring-green-500 border-gray-300 rounded">
+                        <div class="flex-1">
+                            <div class="text-sm font-medium text-gray-900">{{ $device->device_name ?? $device->name }}</div>
+                            <div class="text-xs text-gray-600">{{ $device->phone_number }}</div>
+                        </div>
+                        @if($device->status === 'connected')
+                        <span class="px-2 py-1 text-xs bg-green-100 text-green-800 rounded">متصل</span>
+                        @else
+                        <span class="px-2 py-1 text-xs bg-gray-100 text-gray-800 rounded">غير متصل</span>
+                        @endif
+                    </label>
+                    @endforeach
+                </div>
+                @else
+                <div class="bg-yellow-50 border border-yellow-200 rounded-lg p-3">
+                    <p class="text-yellow-800 text-sm">لا توجد أجهزة متاحة حالياً</p>
+                </div>
+                @endif
             </div>
 
             <div class="mb-4" id="permissions-section">
@@ -108,18 +141,30 @@
 
 @push('scripts')
 <script>
-    document.getElementById('role').addEventListener('change', function() {
+    function updateFormSections() {
+        const role = document.getElementById('role').value;
         const permissionsSection = document.getElementById('permissions-section');
-        if (this.value === 'admin') {
+        const devicesSection = document.getElementById('devices-section');
+        
+        // Hide permissions for admin and super_admin
+        if (role === 'admin' || role === 'super_admin') {
             permissionsSection.style.display = 'none';
         } else {
             permissionsSection.style.display = 'block';
         }
-    });
-    
-    if (document.getElementById('role').value === 'admin') {
-        document.getElementById('permissions-section').style.display = 'none';
+        
+        // Show devices section only for super_admin
+        if (role === 'super_admin') {
+            devicesSection.style.display = 'block';
+        } else {
+            devicesSection.style.display = 'none';
+        }
     }
+    
+    document.getElementById('role').addEventListener('change', updateFormSections);
+    
+    // Initialize on page load
+    updateFormSections();
 </script>
 @endpush
 @endsection

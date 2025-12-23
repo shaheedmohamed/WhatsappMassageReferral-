@@ -25,6 +25,8 @@ class User extends Authenticatable
         'permissions',
         'assigned_devices',
         'is_active',
+        'super_admin_id',
+        'community_id',
     ];
 
     /**
@@ -77,6 +79,42 @@ class User extends Authenticatable
     public function isAgent()
     {
         return $this->role === 'agent';
+    }
+
+    public function isSuperAdmin()
+    {
+        return $this->role === 'super_admin';
+    }
+
+    public function isEmployee()
+    {
+        return $this->role === 'employee';
+    }
+
+    public function superAdmin()
+    {
+        return $this->belongsTo(User::class, 'super_admin_id');
+    }
+
+    public function employees()
+    {
+        return $this->hasMany(User::class, 'super_admin_id')->where('role', 'employee');
+    }
+
+    public function community()
+    {
+        return $this->belongsTo(Community::class);
+    }
+
+    public function ownedCommunities()
+    {
+        return $this->hasMany(Community::class, 'super_admin_id');
+    }
+
+    public function assignedDevices()
+    {
+        return $this->belongsToMany(WhatsappDevice::class, 'super_admin_devices', 'super_admin_id', 'device_id')
+            ->withTimestamps();
     }
 
     public function hasPermission($permission)

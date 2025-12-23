@@ -24,8 +24,13 @@ use Illuminate\Support\Facades\Route;
 
 Route::get('/', function () {
     if (auth()->check()) {
-        if (auth()->user()->isAdmin()) {
+        $user = auth()->user();
+        if ($user->isAdmin()) {
             return redirect()->route('admin.dashboard');
+        } elseif ($user->isSuperAdmin()) {
+            return redirect()->route('super-admin.dashboard');
+        } elseif ($user->isEmployee()) {
+            return redirect()->route('employee.dashboard');
         }
         return redirect()->route('whatsapp.chats');
     }
@@ -74,9 +79,42 @@ Route::middleware(['auth'])->group(function () {
             Route::post('/{id}/disconnect', [DeviceController::class, 'disconnect'])->name('disconnect');
             Route::delete('/{id}', [DeviceController::class, 'destroy'])->name('destroy');
         });
+        
+        Route::prefix('super-admins')->name('super-admins.')->group(function () {
+            Route::get('/', [\App\Http\Controllers\Admin\SuperAdminManagementController::class, 'index'])->name('index');
+            Route::get('/{superAdmin}', [\App\Http\Controllers\Admin\SuperAdminManagementController::class, 'show'])->name('show');
+        });
     });
     
-    Route::middleware(['role:admin,agent'])->prefix('whatsapp')->name('whatsapp.')->group(function () {
+    // Super Admin Routes
+    Route::middleware(['role:super_admin'])->prefix('super-admin')->name('super-admin.')->group(function () {
+        Route::get('/dashboard', [\App\Http\Controllers\SuperAdminController::class, 'dashboard'])->name('dashboard');
+        
+        Route::prefix('communities')->name('communities.')->group(function () {
+            Route::get('/', [\App\Http\Controllers\SuperAdminController::class, 'communities'])->name('index');
+            Route::get('/create', [\App\Http\Controllers\SuperAdminController::class, 'createCommunity'])->name('create');
+            Route::post('/', [\App\Http\Controllers\SuperAdminController::class, 'storeCommunity'])->name('store');
+            Route::get('/{community}/edit', [\App\Http\Controllers\SuperAdminController::class, 'editCommunity'])->name('edit');
+            Route::put('/{community}', [\App\Http\Controllers\SuperAdminController::class, 'updateCommunity'])->name('update');
+        });
+        
+        Route::prefix('employees')->name('employees.')->group(function () {
+            Route::get('/', [\App\Http\Controllers\SuperAdminController::class, 'employees'])->name('index');
+            Route::get('/create', [\App\Http\Controllers\SuperAdminController::class, 'createEmployee'])->name('create');
+            Route::post('/', [\App\Http\Controllers\SuperAdminController::class, 'storeEmployee'])->name('store');
+            Route::get('/{employee}', [\App\Http\Controllers\SuperAdminController::class, 'showEmployee'])->name('show');
+            Route::get('/{employee}/edit', [\App\Http\Controllers\SuperAdminController::class, 'editEmployee'])->name('edit');
+            Route::put('/{employee}', [\App\Http\Controllers\SuperAdminController::class, 'updateEmployee'])->name('update');
+        });
+    });
+    
+    // Employee Routes
+    Route::middleware(['role:employee'])->prefix('employee')->name('employee.')->group(function () {
+        Route::get('/dashboard', [\App\Http\Controllers\EmployeeController::class, 'dashboard'])->name('dashboard');
+        Route::get('/chats', [\App\Http\Controllers\EmployeeController::class, 'chats'])->name('chats');
+    });
+    
+    Route::middleware(['role:admin,agent,super_admin,employee'])->prefix('whatsapp')->name('whatsapp.')->group(function () {
         Route::get('/', [WhatsAppWebController::class, 'index'])->name('index');
         Route::get('/connect', [WhatsAppWebController::class, 'connect'])->name('connect');
         Route::get('/chats', [WhatsAppWebController::class, 'chats'])->name('chats');

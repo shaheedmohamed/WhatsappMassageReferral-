@@ -39,8 +39,14 @@
                     <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ $user->email }}</td>
                     <td class="px-6 py-4 whitespace-nowrap">
                         <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full 
-                            {{ $user->role === 'admin' ? 'bg-purple-100 text-purple-800' : 'bg-blue-100 text-blue-800' }}">
-                            {{ $user->role === 'admin' ? 'مدير' : 'موظف' }}
+                            @if($user->role === 'admin') bg-purple-100 text-purple-800
+                            @elseif($user->role === 'super_admin') bg-blue-100 text-blue-800
+                            @else bg-green-100 text-green-800
+                            @endif">
+                            @if($user->role === 'admin') مدير
+                            @elseif($user->role === 'super_admin') مدير فائق
+                            @else موظف
+                            @endif
                         </span>
                     </td>
                     <td class="px-6 py-4 whitespace-nowrap">
@@ -65,10 +71,15 @@
                     </td>
                     <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
                         <div class="flex gap-2">
-                            <a href="{{ route('admin.users.edit', $user) }}" class="text-blue-600 hover:text-blue-900">
+                            @if($user->isSuperAdmin())
+                            <a href="{{ route('admin.super-admins.show', $user) }}" class="text-green-600 hover:text-green-900" title="عرض">
+                                <i class="fas fa-eye"></i>
+                            </a>
+                            @endif
+                            <a href="{{ route('admin.users.edit', $user) }}" class="text-blue-600 hover:text-blue-900" title="تعديل">
                                 <i class="fas fa-edit"></i>
                             </a>
-                            <a href="{{ route('admin.activity.user', $user) }}" class="text-green-600 hover:text-green-900">
+                            <a href="{{ route('admin.activity.user', $user) }}" class="text-purple-600 hover:text-purple-900" title="النشاط">
                                 <i class="fas fa-chart-bar"></i>
                             </a>
                             @if($user->id !== auth()->id())
