@@ -49,10 +49,10 @@
 
         <div class="bg-gradient-to-br from-green-500 to-green-600 rounded-lg shadow-lg p-6 text-white">
             <div class="flex items-center justify-between mb-2">
-                <h3 class="text-lg font-semibold">الرسائل المرسلة</h3>
-                <i class="fas fa-paper-plane text-2xl opacity-75"></i>
+                <h3 class="text-lg font-semibold">تم الرد عليها</h3>
+                <i class="fas fa-check-circle text-2xl opacity-75"></i>
             </div>
-            <p class="text-4xl font-bold">{{ number_format($totalSent) }}</p>
+            <p class="text-4xl font-bold">{{ number_format($totalReplied) }}</p>
         </div>
 
         <div class="bg-gradient-to-br from-orange-500 to-orange-600 rounded-lg shadow-lg p-6 text-white">

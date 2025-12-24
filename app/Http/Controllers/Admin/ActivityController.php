@@ -18,55 +18,139 @@ class ActivityController extends Controller
         $deviceId = $request->get('device_id');
         $userId = $request->get('user_id');
 
-        $query = WhatsappMessage::with(['device', 'assignedUser'])
-            ->orderBy('message_timestamp', 'desc');
-
-        if ($filter === 'pending') {
-            $query->where('replied', false);
-        } elseif ($filter === 'replied') {
-            $query->where('replied', true);
-        }
+        // Get unique chats with their latest message and assignment
+        $chatsQuery = DB::table('whatsapp_messages')
+            ->select(
+                'from_number',
+                'device_id',
+                DB::raw('MAX(id) as latest_message_id'),
+                DB::raw('MAX(message_timestamp) as last_message_time'),
+                DB::raw('COUNT(*) as message_count')
+            )
+            ->groupBy('from_number', 'device_id');
 
         if ($deviceId) {
-            $query->where('device_id', $deviceId);
+            $chatsQuery->where('device_id', $deviceId);
+        }
+
+        // Get all chats first (without pagination for filtering)
+        $allChats = $chatsQuery->orderBy('last_message_time', 'desc')->get();
+
+        // Get full message details for each chat
+        $messagesCollection = $allChats->map(function($chat) {
+            $message = WhatsappMessage::with(['device', 'assignedUser'])
+                ->find($chat->latest_message_id);
+            
+            if ($message) {
+                $message->message_count = $chat->message_count;
+                $message->last_message_time = $chat->last_message_time;
+                
+                // Get assignment for this chat
+                $assignment = ChatAssignment::where('chat_number', $chat->from_number)
+                    ->where('device_id', $chat->device_id)
+                    ->whereIn('status', ['in_progress', 'on_hold'])
+                    ->with('user')
+                    ->first();
+                
+                if ($assignment) {
+                    $message->assignment = $assignment;
+                    $message->assigned_employee = $assignment->user;
+                }
+            }
+            
+            return $message;
+        })->filter();
+
+        // Apply filters
+        if ($filter === 'pending') {
+            $messagesCollection = $messagesCollection->filter(fn($m) => !$m->replied);
+        } elseif ($filter === 'replied') {
+            $messagesCollection = $messagesCollection->filter(fn($m) => $m->replied);
         }
 
         if ($userId) {
-            $query->where('assigned_user_id', $userId);
+            $messagesCollection = $messagesCollection->filter(fn($m) => $m->assigned_user_id == $userId);
         }
 
-        $messages = $query->paginate(50);
+        // Manual pagination
+        $perPage = 50;
+        $currentPage = request()->get('page', 1);
+        $offset = ($currentPage - 1) * $perPage;
+        
+        $paginatedItems = $messagesCollection->slice($offset, $perPage)->values();
+        
+        $messages = new \Illuminate\Pagination\LengthAwarePaginator(
+            $paginatedItems,
+            $messagesCollection->count(),
+            $perPage,
+            $currentPage,
+            ['path' => request()->url(), 'query' => request()->query()]
+        );
 
         $devices = WhatsappDevice::where('status', 'connected')->get();
-        $users = User::where('role', 'agent')->where('is_active', true)->get();
+        $users = User::where('role', 'employee')->where('is_active', true)->get();
 
+        // Enhanced statistics
         $stats = [
             'total_chats' => WhatsappMessage::distinct('from_number')->count('from_number'),
             'pending_chats' => WhatsappMessage::where('replied', false)->distinct('from_number')->count('from_number'),
             'replied_chats' => WhatsappMessage::where('replied', true)->distinct('from_number')->count('from_number'),
-            'active_agents' => User::where('role', 'agent')->where('status', 'online')->count(),
-            'total_agents' => User::where('role', 'agent')->where('is_active', true)->count(),
+            'active_agents' => User::where('role', 'employee')->where('status', 'online')->count(),
+            'total_agents' => User::where('role', 'employee')->where('is_active', true)->count(),
+            'in_progress_chats' => ChatAssignment::where('status', 'in_progress')->count(),
+            'on_hold_chats' => ChatAssignment::where('status', 'on_hold')->count(),
+            'completed_today' => ChatAssignment::where('status', 'completed')
+                ->whereDate('completed_at', today())
+                ->count(),
         ];
 
-        $onlineUsers = User::where('role', 'agent')
-            ->where('status', 'online')
-            ->with(['chatAssignments' => function($query) {
-                $query->where('status', 'active');
-            }])
-            ->get();
+        // Get all agents with their current workload
+        $allAgents = User::where('role', 'employee')
+            ->where('is_active', true)
+            ->withCount([
+                'chatAssignments as active_chats' => function($query) {
+                    $query->where('status', 'in_progress');
+                },
+                'chatAssignments as hold_chats' => function($query) {
+                    $query->where('status', 'on_hold');
+                },
+                'chatAssignments as completed_today' => function($query) {
+                    $query->where('status', 'completed')
+                          ->whereDate('completed_at', today());
+                }
+            ])
+            ->get()
+            ->map(function($agent) {
+                $agent->is_available = $agent->status === 'online' && $agent->active_chats < 5;
+                $agent->workload_status = $agent->active_chats == 0 ? 'free' : 
+                    ($agent->active_chats < 3 ? 'light' : 
+                    ($agent->active_chats < 5 ? 'moderate' : 'busy'));
+                return $agent;
+            });
 
+        // Get active assignments with detailed info
         $activeAssignments = ChatAssignment::with(['user', 'device'])
-            ->where('status', 'active')
+            ->whereIn('status', ['in_progress', 'on_hold'])
+            ->orderBy('assigned_at', 'desc')
             ->get()
             ->groupBy('user_id');
+
+        // Get recent activity (last 10 actions)
+        $recentActivity = ChatAssignment::with(['user', 'device'])
+            ->whereNotNull('completed_at')
+            ->orWhereNotNull('claimed_at')
+            ->orderBy('updated_at', 'desc')
+            ->limit(10)
+            ->get();
 
         return view('admin.activity.index', compact(
             'messages', 
             'devices', 
             'users', 
             'stats', 
-            'onlineUsers',
+            'allAgents',
             'activeAssignments',
+            'recentActivity',
             'filter',
             'deviceId',
             'userId'
@@ -123,5 +207,33 @@ class ActivityController extends Controller
             ]);
 
         return back()->with('success', 'تم تعيين المحادثة بنجاح');
+    }
+
+    public function viewChat(Request $request)
+    {
+        $chatId = $request->get('chat_id');
+        $deviceId = $request->get('device_id');
+        $chatNumber = $request->get('chat_number');
+
+        if (!$chatId || !$deviceId) {
+            return back()->with('error', 'معلومات المحادثة غير مكتملة');
+        }
+
+        // Get chat assignment info
+        $assignment = ChatAssignment::with(['user', 'device'])
+            ->where('chat_id', $chatId)
+            ->where('device_id', $deviceId)
+            ->first();
+
+        // Get all messages for this chat
+        $messages = WhatsappMessage::where('device_id', $deviceId)
+            ->where(function($query) use ($chatNumber) {
+                $query->where('from_number', $chatNumber)
+                      ->orWhere('to_number', $chatNumber);
+            })
+            ->orderBy('message_timestamp', 'asc')
+            ->get();
+
+        return view('admin.activity.chat', compact('assignment', 'messages', 'chatNumber'));
     }
 }

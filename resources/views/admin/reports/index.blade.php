@@ -62,7 +62,7 @@
                 </div>
                 <div class="flex justify-between items-center">
                     <span class="text-sm">الموظفين النشطين</span>
-                    <span class="font-bold text-lg">{{ \App\Models\User::where('role', 'agent')->where('is_active', true)->count() }}</span>
+                    <span class="font-bold text-lg">{{ \App\Models\User::where('role', 'employee')->where('is_active', true)->count() }}</span>
                 </div>
                 <div class="flex justify-between items-center">
                     <span class="text-sm">الأجهزة المتصلة</span>
@@ -114,7 +114,7 @@
             <div class="flex items-center justify-between">
                 <div>
                     <p class="text-gray-500 text-sm">إجمالي الموظفين</p>
-                    <h3 class="text-2xl font-bold text-gray-800 mt-1">{{ \App\Models\User::where('role', 'agent')->count() }}</h3>
+                    <h3 class="text-2xl font-bold text-gray-800 mt-1">{{ \App\Models\User::where('role', 'employee')->count() }}</h3>
                 </div>
                 <div class="bg-purple-100 rounded-full p-3">
                     <i class="fas fa-user-tie text-purple-600 text-xl"></i>

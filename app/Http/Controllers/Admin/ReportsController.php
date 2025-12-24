@@ -23,12 +23,11 @@ class ReportsController extends Controller
         $startDate = $request->input('start_date', now()->subDays(30));
         $endDate = $request->input('end_date', now());
         
-        // Total messages received and sent
-        $totalReceived = WhatsappMessage::where('is_from_me', false)
-            ->whereBetween('created_at', [$startDate, $endDate])
+        // Total messages received and replied
+        $totalReceived = WhatsappMessage::whereBetween('created_at', [$startDate, $endDate])
             ->count();
         
-        $totalSent = WhatsappMessage::where('is_from_me', true)
+        $totalReplied = WhatsappMessage::where('replied', true)
             ->whereBetween('created_at', [$startDate, $endDate])
             ->count();
         
@@ -60,7 +59,7 @@ class ReportsController extends Controller
         
         return view('admin.reports.general', compact(
             'totalReceived',
-            'totalSent',
+            'totalReplied',
             'avgResponseTime',
             'messagesByGroup',
             'messagesByDevice',
@@ -86,7 +85,7 @@ class ReportsController extends Controller
         $workLogs = $query->get();
         
         // Agent statistics
-        $agentStats = User::where('role', 'agent')
+        $agentStats = User::where('role', 'employee')
             ->with(['workLogs' => function($q) use ($startDate, $endDate) {
                 $q->whereBetween('login_at', [$startDate, $endDate]);
             }])
@@ -105,7 +104,7 @@ class ReportsController extends Controller
                 ];
             });
         
-        $agents = User::where('role', 'agent')->get();
+        $agents = User::where('role', 'employee')->get();
         
         return view('admin.reports.agents', compact(
             'workLogs',
@@ -181,8 +180,8 @@ class ReportsController extends Controller
         return [
             'summary' => [
                 ['Metric', 'Value'],
-                ['Total Received Messages', WhatsappMessage::where('is_from_me', false)->whereBetween('created_at', [$startDate, $endDate])->count()],
-                ['Total Sent Messages', WhatsappMessage::where('is_from_me', true)->whereBetween('created_at', [$startDate, $endDate])->count()],
+                ['Total Received Messages', WhatsappMessage::whereBetween('created_at', [$startDate, $endDate])->count()],
+                ['Total Replied Messages', WhatsappMessage::where('replied', true)->whereBetween('created_at', [$startDate, $endDate])->count()],
                 ['Average Response Time (minutes)', round(WhatsappMessage::whereBetween('created_at', [$startDate, $endDate])->whereNotNull('response_time_minutes')->avg('response_time_minutes'), 2)],
             ],
             'by_group' => WhatsappMessage::whereBetween('created_at', [$startDate, $endDate])
@@ -198,7 +197,7 @@ class ReportsController extends Controller
 
     private function getAgentsReportData($startDate, $endDate)
     {
-        $agents = User::where('role', 'agent')
+        $agents = User::where('role', 'employee')
             ->with(['workLogs' => function($q) use ($startDate, $endDate) {
                 $q->whereBetween('login_at', [$startDate, $endDate]);
             }])

@@ -58,6 +58,7 @@ Route::middleware(['auth'])->group(function () {
             Route::get('/', [ActivityController::class, 'index'])->name('index');
             Route::get('/user/{user}', [ActivityController::class, 'userActivity'])->name('user');
             Route::post('/assign-chat', [ActivityController::class, 'assignChat'])->name('assign-chat');
+            Route::get('/chat/view', [ActivityController::class, 'viewChat'])->name('chat.view');
         });
         
         Route::prefix('reports')->name('reports.')->group(function () {
