@@ -89,10 +89,6 @@
                         <span>الدردشات</span>
                     </a>
                     
-                    <a href="{{ route('whatsapp.chats') }}" class="flex items-center px-6 py-3 hover:bg-green-500 transition {{ request()->routeIs('whatsapp.chats') ? 'bg-green-500' : '' }}">
-                        <i class="fab fa-whatsapp ml-3"></i>
-                        <span>واتساب</span>
-                    </a>
                 @endif
             </nav>
 

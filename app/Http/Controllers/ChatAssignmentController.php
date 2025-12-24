@@ -141,6 +141,7 @@ class ChatAssignmentController extends Controller
         }
 
         $assignment->update($updateData);
+        $assignment->refresh();
 
         $statusMessage = $request->status === 'completed' 
             ? 'تم إنهاء المحادثة بنجاح' 
@@ -149,7 +150,12 @@ class ChatAssignmentController extends Controller
         return response()->json([
             'success' => true,
             'message' => $statusMessage,
-            'assignment' => $assignment,
+            'assignment' => [
+                'employee_name' => $assignment->employee_name,
+                'status' => $assignment->status,
+                'status_text' => $assignment->status_text,
+                'is_current_user' => true,
+            ],
         ]);
     }
 
@@ -197,7 +203,7 @@ class ChatAssignmentController extends Controller
 
         $assignments = ChatAssignment::with(['user', 'device'])
             ->whereIn('device_id', $communityDevices)
-            ->whereIn('status', ['in_progress', 'on_hold'])
+            ->whereIn('status', ['in_progress', 'on_hold', 'completed'])
             ->get()
             ->map(function ($assignment) {
                 return [

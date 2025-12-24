@@ -160,6 +160,14 @@
                 <select id="deviceFilter" class="w-full px-4 py-2 rounded-lg bg-white border-none focus:outline-none focus:ring-0" style="box-shadow: 0 1px 2px rgba(0,0,0,0.1);">
                     <option value="">جميع الأجهزة</option>
                 </select>
+                
+                <select id="statusFilter" class="w-full px-4 py-2 rounded-lg bg-white border-none focus:outline-none focus:ring-0" style="box-shadow: 0 1px 2px rgba(0,0,0,0.1);">
+                    <option value="">جميع المحادثات</option>
+                    <option value="in_progress">جاري التعامل</option>
+                    <option value="on_hold">في الانتظار</option>
+                    <option value="completed">مكتملة</option>
+                    <option value="unassigned">غير مخصصة</option>
+                </select>
             </div>
 
             <div id="chatsList">
@@ -379,6 +387,8 @@
         let messagesInterval = null;
         let chatAssignments = {};
         let pendingChatOpen = null;
+        let lastMessagesCount = 0;
+        let isUserInteracting = false;
         
         // Community device IDs from server
         const communityDeviceIds = @json($devices->pluck('id')->toArray());
@@ -460,7 +470,14 @@
                 
                 let assignmentBadge = '';
                 if (assignment) {
-                    const badgeColor = assignment.status === 'in_progress' ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800';
+                    let badgeColor = 'bg-gray-100 text-gray-800';
+                    if (assignment.status === 'in_progress') {
+                        badgeColor = 'bg-green-100 text-green-800';
+                    } else if (assignment.status === 'on_hold') {
+                        badgeColor = 'bg-yellow-100 text-yellow-800';
+                    } else if (assignment.status === 'completed') {
+                        badgeColor = 'bg-blue-100 text-blue-800';
+                    }
                     assignmentBadge = `<span class="text-xs ${badgeColor} px-2 py-1 rounded-full ml-2">👤 ${assignment.employee_name} - ${assignment.status_text}</span>`;
                 }
                 
@@ -546,6 +563,7 @@
                 clearInterval(messagesInterval);
             }
             
+            lastMessagesCount = 0;
             loadMessages(chatId, deviceId);
             messagesInterval = setInterval(() => loadMessages(chatId, deviceId), 5000);
             loadChatAssignments();
@@ -632,6 +650,16 @@
                 if (data.success) {
                     hideExitModal();
                     
+                    const assignmentKey = `${currentChatId}_${currentChatDeviceId}`;
+                    if (data.assignment) {
+                        chatAssignments[assignmentKey] = {
+                            employee_name: data.assignment.employee_name,
+                            status: data.assignment.status,
+                            status_text: data.assignment.status_text || (status === 'completed' ? 'مكتملة' : 'في الانتظار'),
+                            is_current_user: true
+                        };
+                    }
+                    
                     if (messagesInterval) {
                         clearInterval(messagesInterval);
                     }
@@ -639,13 +667,16 @@
                     document.getElementById('noChatSelected').classList.remove('hidden');
                     document.getElementById('chatArea').classList.add('hidden');
                     
+                    const tempChatId = currentChatId;
+                    const tempDeviceId = currentChatDeviceId;
+                    
                     currentChatId = null;
                     currentChatDeviceId = null;
                     currentChatNumber = null;
                     currentChatName = null;
                     
-                    loadChats();
-                    loadChatAssignments();
+                    await loadChatAssignments();
+                    displayChats(chats);
                 } else {
                     alert(data.message || 'فشل تحديث حالة المحادثة');
                 }
@@ -708,7 +739,10 @@
                 const data = await response.json();
                 
                 if (data.success && data.messages) {
-                    displayMessages(data.messages);
+                    if (data.messages.length !== lastMessagesCount || lastMessagesCount === 0) {
+                        displayMessages(data.messages);
+                        lastMessagesCount = data.messages.length;
+                    }
                 } else {
                     document.getElementById('messagesContainer').innerHTML = `
                         <div class="flex items-center justify-center h-full">
@@ -1132,9 +1166,14 @@
             filterChats();
         });
 
+        document.getElementById('statusFilter').addEventListener('change', (e) => {
+            filterChats();
+        });
+
         function filterChats() {
             const search = document.getElementById('searchChats').value.toLowerCase();
             const deviceId = document.getElementById('deviceFilter').value;
+            const statusFilter = document.getElementById('statusFilter').value;
             
             let filtered = chats.filter(chat => 
                 chat.name.toLowerCase().includes(search)
@@ -1142,6 +1181,19 @@
             
             if (deviceId) {
                 filtered = filtered.filter(chat => String(chat.deviceId) === String(deviceId));
+            }
+            
+            if (statusFilter) {
+                filtered = filtered.filter(chat => {
+                    const assignmentKey = `${chat.id}_${chat.deviceId}`;
+                    const assignment = chatAssignments[assignmentKey];
+                    
+                    if (statusFilter === 'unassigned') {
+                        return !assignment;
+                    }
+                    
+                    return assignment && assignment.status === statusFilter;
+                });
             }
             
             displayChats(filtered);
