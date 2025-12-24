@@ -278,11 +278,30 @@
                 </div>
                 
                 <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">البحث في جهات الاتصال أو إدخال رقم جديد</label>
+                    <div class="relative">
+                        <input type="text" id="contactSearch" placeholder="ابحث بالاسم أو الرقم..." 
+                            class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-green-500"
+                            oninput="searchContacts(this.value)">
+                        <svg class="w-5 h-5 absolute left-3 top-3 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
+                        </svg>
+                    </div>
+                    <div id="contactSearchResults" class="hidden mt-2 max-h-48 overflow-y-auto border border-gray-300 rounded-lg bg-white shadow-lg">
+                    </div>
+                </div>
+                
+                <div>
                     <label class="block text-sm font-medium text-gray-700 mb-2">رقم الهاتف</label>
                     <input type="text" id="newPhoneNumber" placeholder="966500000000" 
                         class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-green-500"
                         required>
-                    <p class="text-xs text-gray-500 mt-1">أدخل الرقم بدون + أو - (مثال: 966500000000)</p>
+                    <div class="mt-2 p-3 bg-blue-50 border border-blue-200 rounded-lg">
+                        <p class="text-xs text-blue-800 font-semibold mb-1">⚠️ مهم: يجب إدخال الرمز الدولي</p>
+                        <p class="text-xs text-blue-700">• أدخل الرقم بدون + أو - أو مسافات</p>
+                        <p class="text-xs text-blue-700">• مثال للسعودية: <span class="font-mono bg-white px-2 py-0.5 rounded">966500000000</span></p>
+                        <p class="text-xs text-blue-700">• مثال لمصر: <span class="font-mono bg-white px-2 py-0.5 rounded">201000000000</span></p>
+                    </div>
                 </div>
                 
                 <div>
@@ -1203,6 +1222,8 @@
 
         function showNewMessageModal() {
             document.getElementById('newMessageModal').classList.remove('hidden');
+            document.getElementById('contactSearch').value = '';
+            document.getElementById('contactSearchResults').classList.add('hidden');
         }
 
         function hideNewMessageModal() {
@@ -1210,6 +1231,57 @@
             document.getElementById('newMessageDevice').value = '';
             document.getElementById('newPhoneNumber').value = '';
             document.getElementById('newMessageText').value = '';
+            document.getElementById('contactSearch').value = '';
+            document.getElementById('contactSearchResults').classList.add('hidden');
+        }
+
+        function searchContacts(searchTerm) {
+            const resultsContainer = document.getElementById('contactSearchResults');
+            
+            if (!searchTerm || searchTerm.length < 2) {
+                resultsContainer.classList.add('hidden');
+                return;
+            }
+            
+            const searchLower = searchTerm.toLowerCase();
+            const filteredChats = chats.filter(chat => {
+                const name = chat.name.toLowerCase();
+                const number = chat.id.replace('@c.us', '').replace('@g.us', '');
+                return name.includes(searchLower) || number.includes(searchLower);
+            });
+            
+            if (filteredChats.length === 0) {
+                resultsContainer.innerHTML = '<div class="p-3 text-center text-gray-500 text-sm">لا توجد نتائج</div>';
+                resultsContainer.classList.remove('hidden');
+                return;
+            }
+            
+            resultsContainer.innerHTML = filteredChats.slice(0, 10).map(chat => {
+                const number = chat.id.replace('@c.us', '').replace('@g.us', '');
+                const initial = chat.name.charAt(0).toUpperCase();
+                return `
+                    <div class="p-3 hover:bg-gray-100 cursor-pointer border-b border-gray-200 last:border-b-0" 
+                         onclick="selectContact('${number}', '${chat.name.replace(/'/g, "\\'")}')">
+                        <div class="flex items-center gap-3">
+                            <div class="w-10 h-10 bg-[#6b7c85] rounded-full flex items-center justify-center text-white font-bold">
+                                ${initial}
+                            </div>
+                            <div class="flex-1">
+                                <p class="font-semibold text-gray-800">${chat.name}</p>
+                                <p class="text-xs text-gray-500">${number}</p>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+            
+            resultsContainer.classList.remove('hidden');
+        }
+
+        function selectContact(number, name) {
+            document.getElementById('newPhoneNumber').value = number;
+            document.getElementById('contactSearch').value = name;
+            document.getElementById('contactSearchResults').classList.add('hidden');
         }
 
         document.getElementById('newMessageForm').addEventListener('submit', async (e) => {
