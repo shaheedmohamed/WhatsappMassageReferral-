@@ -99,9 +99,9 @@
                 </div>
             </a>
             <a href="{{ route('whatsapp.chats') }}" class="flex items-center p-4 bg-green-50 hover:bg-green-100 rounded-lg transition">
-                <i class="fab fa-whatsapp text-green-600 text-2xl ml-3"></i>
+                <i class="fas fa-comments text-green-600 text-2xl ml-3"></i>
                 <div>
-                    <h3 class="font-semibold text-gray-800">واتساب</h3>
+                    <h3 class="font-semibold text-gray-800">Care Bot</h3>
                     <p class="text-sm text-gray-600">الرد على الرسائل</p>
                 </div>
             </a>

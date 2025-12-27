@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="csrf-token" content="{{ csrf_token() }}">
-    <title>محادثات واتساب</title>
+    <title>محادثات Care Bot</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
         body {
@@ -137,7 +137,7 @@
         <div class="w-1/3 bg-white border-l border-gray-300 flex flex-col">
             <div class="bg-[#008069] text-white p-4">
                 <div class="flex items-center justify-between">
-                    <h1 class="text-xl font-bold">Shaheed WhatsApp</h1>
+                    <h1 class="text-xl font-bold">Shaheed Care Bot</h1>
                     <div class="flex gap-2">
                         <button onclick="showNewMessageModal()" class="text-white hover:bg-[#017561] p-2 rounded-full transition" title="رسالة جديدة">
                             <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -178,7 +178,7 @@
                     <svg class="w-32 h-32 text-gray-300 mx-auto mb-4" fill="currentColor" viewBox="0 0 24 24">
                         <path d="M20 2H4c-1.1 0-2 .9-2 2v18l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm0 14H6l-2 2V4h16v12z"/>
                     </svg>
-                    <h2 class="text-2xl font-semibold text-gray-600 mb-2">واتساب ويب</h2>
+                    <h2 class="text-2xl font-semibold text-gray-600 mb-2">Care Bot ويب</h2>
                     <p class="text-gray-500">اختر محادثة من القائمة للبدء</p>
                 </div>
             </div>
@@ -860,7 +860,7 @@
         }
 
         async function logout() {
-            if (!confirm('هل تريد تسجيل الخروج من واتساب؟')) return;
+            if (!confirm('هل تريد تسجيل الخروج من Care Bot؟')) return;
             
             try {
                 await fetch('{{ route("whatsapp.api.logout") }}', { method: 'POST' });

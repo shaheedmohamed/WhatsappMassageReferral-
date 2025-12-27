@@ -18,8 +18,8 @@
         <!-- Sidebar -->
         <aside class="w-64 bg-gradient-to-b from-green-600 to-green-700 text-white flex-shrink-0">
             <div class="p-6">
-                <h1 class="text-2xl font-bold">Shaheed Admin</h1>
-                <p class="text-green-200 text-sm mt-1">نظام إدارة واتساب</p>
+                <h1 class="text-2xl font-bold">Care Bot Admin</h1>
+                <p class="text-green-200 text-sm mt-1">نظام إدارة Care Bot</p>
             </div>
             
             <nav class="mt-6">

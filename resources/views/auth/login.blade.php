@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="csrf-token" content="{{ csrf_token() }}">
-    <title>تسجيل الدخول - Shaheed WhatsApp</title>
+    <title>تسجيل الدخول -  Care Bot</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
@@ -57,10 +57,10 @@
         <!-- Logo & Title -->
         <div class="text-center mb-8">
             <div class="inline-block bg-white rounded-full p-6 shadow-2xl mb-4 animate-float">
-                <i class="fab fa-whatsapp text-6xl text-green-500"></i>
+                <i class="fas fa-comments text-6xl text-green-500"></i>
             </div>
-            <h1 class="text-4xl font-bold text-white mb-2">Shaheed WhatsApp</h1>
-            <p class="text-white text-opacity-90">نظام إدارة واتساب المتقدم</p>
+            <h1 class="text-4xl font-bold text-white mb-2">Shaheed Care Bot</h1>
+            <p class="text-white text-opacity-90">نظام إدارة الرسائل المتقدم</p>
         </div>
 
         <!-- Login Card -->
@@ -159,7 +159,7 @@
         <div class="text-center mt-6 text-white text-opacity-90">
             <p class="text-sm">
                 <i class="fas fa-shield-alt ml-1"></i>
-                جميع الحقوق محفوظة © {{ date('Y') }} Shaheed WhatsApp
+                جميع الحقوق محفوظة © {{ date('Y') }} Shaheed Care Bot
             </p>
         </div>
     </div>

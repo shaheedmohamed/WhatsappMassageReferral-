@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="csrf-token" content="{{ csrf_token() }}">
-    <title>محادثات واتساب</title>
+    <title>محادثات Care Bot</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
         body {
@@ -186,7 +186,7 @@
                     <svg class="w-32 h-32 text-gray-300 mx-auto mb-4" fill="currentColor" viewBox="0 0 24 24">
                         <path d="M20 2H4c-1.1 0-2 .9-2 2v18l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm0 14H6l-2 2V4h16v12z"/>
                     </svg>
-                    <h2 class="text-2xl font-semibold text-gray-600 mb-2">واتساب ويب</h2>
+                    <h2 class="text-2xl font-semibold text-gray-600 mb-2">Care Bot ويب</h2>
                     <p class="text-gray-500">اختر محادثة من القائمة للبدء</p>
                 </div>
             </div>

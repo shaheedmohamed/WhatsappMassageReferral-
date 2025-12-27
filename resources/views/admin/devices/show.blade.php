@@ -48,7 +48,7 @@
 
         @if($device->status === 'disconnected' || $device->status === 'connecting')
             <div class="border-t border-gray-200 pt-6">
-                <h2 class="text-xl font-bold text-gray-800 mb-4">ربط الجهاز بواتساب</h2>
+                <h2 class="text-xl font-bold text-gray-800 mb-4">ربط الجهاز بـ Care Bot</h2>
                 
                 <div id="qrSection" class="text-center">
                     <div id="qrLoading" class="mb-4">
@@ -65,7 +65,7 @@
                                 <i class="fas fa-info-circle ml-2"></i>خطوات الربط:
                             </h3>
                             <ol class="text-sm text-blue-700 text-right space-y-1">
-                                <li>1. افتح تطبيق واتساب على هاتفك</li>
+                                <li>1. افتح تطبيق Care Bot على هاتفك</li>
                                 <li>2. اذهب إلى: الإعدادات > الأجهزة المرتبطة</li>
                                 <li>3. اضغط على "ربط جهاز"</li>
                                 <li>4. امسح الكود أعلاه</li>
@@ -87,7 +87,7 @@
                         <div class="bg-green-50 border border-green-200 rounded-lg p-6">
                             <i class="fas fa-check-circle text-green-500 text-5xl mb-3"></i>
                             <h3 class="text-xl font-bold text-green-800 mb-2">تم الاتصال بنجاح! 🎉</h3>
-                            <p class="text-green-700 mb-4">الجهاز متصل الآن بواتساب</p>
+                            <p class="text-green-700 mb-4">الجهاز متصل الآن بـ Care Bot</p>
                             <a href="{{ route('whatsapp.chats') }}" class="inline-block bg-green-600 hover:bg-green-700 text-white px-6 py-2 rounded-lg">
                                 <i class="fas fa-comments ml-2"></i>فتح المحادثات
                             </a>
